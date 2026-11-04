@@ -3,7 +3,7 @@
   "name": "Session Revocation",
   "status": "PASS",
   "condition": "Logout/Revoke h\u1ee7y session ngay l\u1eadp t\u1ee9c; request d\u00f9ng session c\u0169 nh\u1eadn 401",
-  "session_tested": "t6zfQqwVBualajN2bjTDljweIWiBRqKoLv1vr5bmsPo",
+  "session_tested": "qI3xlj5jBs-NulmWhpZCs41MAjQgWZ57c9saqcx3c1M",
   "request_before_logout": {
     "status_code": 200,
     "body": {
@@ -37,15 +37,15 @@
     }
   },
   "audit_record": {
-    "timestamp": "2026-11-04T15:30:18.969981Z",
+    "timestamp": "2026-11-04T15:43:41.788011Z",
     "actor_id": 1,
     "role": "CSKH",
     "action": "LOGOUT",
     "object_id": "1",
     "result": "SUCCESS",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t8-1793806218-logout",
-    "session_id_hash": "8c1dbda6e8a272c5febc0605f474b2e76f21c50912e05dae79568e651a5b156b",
+    "correlation_id": "test-t8-1793807021-logout",
+    "session_id_hash": "e41fa95ee5be215de247e9f6f9cd079fa433f630618b07138f923daec8bf4285",
     "details": {
       "session_destroyed": true
     }
