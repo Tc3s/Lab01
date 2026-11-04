@@ -44,6 +44,7 @@ services:
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-lax}
       - AUDIT_LOG_FILE=${AUDIT_LOG_FILE:-logs/audit.log}
     volumes:
+      - ./static:/app/static:ro
       - app_data:/app/data
       - app_logs:/app/logs
       - app_evidence:/app/evidence
