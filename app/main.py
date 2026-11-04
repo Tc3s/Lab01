@@ -83,3 +83,4 @@ async def health_check():
         "service": settings.PROJECT_NAME,
         "environment": settings.APP_ENV,
     }
+

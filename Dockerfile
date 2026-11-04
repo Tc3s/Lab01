@@ -30,3 +30,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
 
 # Start script: initialize DB, seed test accounts, then launch uvicorn server
 CMD ["sh", "-c", "python3 scripts/seed_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+
