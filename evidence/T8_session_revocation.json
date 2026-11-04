@@ -1,0 +1,53 @@
+{
+  "test_id": "T8",
+  "name": "Session Revocation",
+  "status": "PASS",
+  "condition": "Logout/Revoke h\u1ee7y session ngay l\u1eadp t\u1ee9c; request d\u00f9ng session c\u0169 nh\u1eadn 401",
+  "session_tested": "PWDuDAmtXyo_zcagAGpQsh58RZDXNDPM5Y07FB-ugBU",
+  "request_before_logout": {
+    "status_code": 200,
+    "body": {
+      "user_id": 1,
+      "username": "cskh_user",
+      "role": "CSKH",
+      "mfa_state": "verified"
+    }
+  },
+  "logout_response": {
+    "status_code": 200,
+    "body": {
+      "message": "Logged out successfully",
+      "detail": null
+    }
+  },
+  "request_after_logout": {
+    "status_code": 401,
+    "body": {
+      "detail": {
+        "error": "SESSION_EXPIRED",
+        "message": "Session expired or invalid"
+      }
+    }
+  },
+  "redis_key_deleted": true,
+  "bonus_revoke_all_response": {
+    "message": "All 4 sessions revoked",
+    "detail": {
+      "sessions_revoked": 4
+    }
+  },
+  "audit_record": {
+    "timestamp": "2026-11-04T13:06:48.270492Z",
+    "actor_id": 1,
+    "role": "CSKH",
+    "action": "LOGOUT",
+    "object_id": "1",
+    "result": "SUCCESS",
+    "source_ip": "127.0.0.1",
+    "correlation_id": "test-t8-1793797608-logout",
+    "session_id_hash": "696cc9f035b2ed718a335fd2b88800fdbf8d4b833f522f05ce9a95942cc95303",
+    "details": {
+      "session_destroyed": true
+    }
+  }
+}

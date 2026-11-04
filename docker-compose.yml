@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ecomm_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build: .
+    container_name: ecomm_app
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=Secure E-Commerce Admin Portal
+      - APP_ENV=production
+      - DEBUG=False
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///./data/ecommerce.db
+      - SESSION_IDLE_TIMEOUT_SECONDS=900
+      - SESSION_ABSOLUTE_TIMEOUT_SECONDS=28800
+      - OTP_REPLAY_TTL_SECONDS=90
+      - AUDIT_LOG_FILE=logs/audit.log
+    volumes:
+      - app_data:/app/data
+      - app_logs:/app/logs
+      - app_evidence:/app/evidence
+
+volumes:
+  redis_data:
+  app_data:
+  app_logs:
+  app_evidence:

@@ -1,0 +1,177 @@
+{
+  "info": {
+    "name": "E-Commerce Security Lab - Test Collection (T1 - T8)",
+    "_postman_id": "ecomm-sec-lab-01",
+    "description": "Postman Collection for verifying 6 core security controls and T1-T8 test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "cskh_otp",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refund_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "T1 - Auth Step 1: Login (CSKH)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"cskh_user\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "T1 - Auth Step 2: MFA Verify (Valid TOTP)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"otp_code\": \"{{cskh_otp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/mfa/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "mfa", "verify"]
+        }
+      }
+    },
+    {
+      "name": "T2 - Replay OTP (Expect 401 REPLAY_DETECTED)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"otp_code\": \"{{cskh_otp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/mfa/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "mfa", "verify"]
+        }
+      }
+    },
+    {
+      "name": "T3 - Invalid OTP (Expect 401 INVALID_OTP)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"otp_code\": \"000000\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/mfa/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "mfa", "verify"]
+        }
+      }
+    },
+    {
+      "name": "T4 - Session Verification (GET /auth/me)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        }
+      }
+    },
+    {
+      "name": "T5 & T6 - CSKH Create Refund (With PAN/CVV to test T7 Masking)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"ORD-POSTMAN-001\",\n  \"customer_name\": \"Nguyen Van Postman\",\n  \"amount\": 450000,\n  \"reason\": \"Defective item\",\n  \"pan\": \"4532-1234-5678-9999\",\n  \"cvv\": \"888\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/refunds",
+          "host": ["{{baseUrl}}"],
+          "path": ["refunds"]
+        }
+      }
+    },
+    {
+      "name": "T5 - CSKH Attempt Approve (Expect 403 Forbidden)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/refunds/{{refund_id}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["refunds", "{{refund_id}}", "approve"]
+        }
+      }
+    },
+    {
+      "name": "T6 - KETOAN Approve Refund (Expect 200 OK)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/refunds/{{refund_id}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["refunds", "{{refund_id}}", "approve"]
+        }
+      }
+    },
+    {
+      "name": "T8 - Logout (Revoke Session)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        }
+      }
+    },
+    {
+      "name": "T8 - Revoke All Sessions (Bonus)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/revoke-all",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "revoke-all"]
+        }
+      }
+    }
+  ]
+}

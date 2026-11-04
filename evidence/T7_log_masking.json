@@ -1,0 +1,32 @@
+{
+  "test_id": "T7",
+  "name": "Log Masking & Zero Sensitive Data Leakage",
+  "status": "PASS",
+  "condition": "Kh\u00f4ng c\u00f3 CVV/full PAN trong log; PAN ch\u1ec9 hi\u1ec3n th\u1ecb ************last4",
+  "submitted_pan": "4111-2222-3333-4444",
+  "submitted_cvv": "839",
+  "database_stored_pan_last4": "4444",
+  "raw_audit_log_entry": {
+    "timestamp": "2026-11-04T13:06:48.259966Z",
+    "actor_id": 1,
+    "role": "CSKH",
+    "action": "REFUND_CREATE",
+    "object_id": "b797da9e-5e50-4357-bbdd-d49bcefd086a",
+    "result": "SUCCESS",
+    "source_ip": "127.0.0.1",
+    "correlation_id": "test-t7-1793797608",
+    "session_id_hash": "696cc9f035b2ed718a335fd2b88800fdbf8d4b833f522f05ce9a95942cc95303",
+    "details": {
+      "order_id": "ORD-MASK-PCI",
+      "amount": 999999.0,
+      "pan": "************4444",
+      "reason": "PCI DSS Compliance Verification",
+      "status": "PENDING"
+    }
+  },
+  "verifications": {
+    "cvv_absent_from_log": true,
+    "full_pan_absent_from_log": true,
+    "pan_masked_properly": true
+  }
+}

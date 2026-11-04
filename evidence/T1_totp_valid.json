@@ -1,0 +1,40 @@
+{
+  "test_id": "T1",
+  "name": "TOTP h\u1ee3p l\u1ec7",
+  "status": "PASS",
+  "condition": "HTTP 200; MFA state = verified; audit MFA_SUCCESS recorded",
+  "request_login": {
+    "username": "cskh_user",
+    "status": 200
+  },
+  "otp_used": "334733",
+  "response_mfa": {
+    "status_code": 200,
+    "body": {
+      "message": "MFA verified successfully",
+      "mfa_state": "verified",
+      "user_id": 1,
+      "role": "CSKH"
+    },
+    "cookies_received": {
+      "session_id": "Ac04VTmPV6xlzAfx86lnUgVvpmeNE1GHGEjhJ_GoX6I"
+    }
+  },
+  "audit_record": {
+    "timestamp": "2026-11-04T13:06:47.897587Z",
+    "actor_id": 1,
+    "role": "CSKH",
+    "action": "MFA_SUCCESS",
+    "object_id": "1",
+    "result": "SUCCESS",
+    "source_ip": "127.0.0.1",
+    "correlation_id": "test-t1-1793797607",
+    "session_id_hash": "84b3b02b67ddd38b4986f5ab56b69355b7f78e3a24819b44d7cce5276b3d2c86",
+    "details": {
+      "mfa_state": "verified",
+      "session_rotated": true,
+      "old_session_hash": "6f8e38f9e2c83c415043ec2f11459ae7d2acc355396d1e9f55d0f7314d652eff",
+      "new_session_hash": "84b3b02b67ddd38b4986f5ab56b69355b7f78e3a24819b44d7cce5276b3d2c86"
+    }
+  }
+}

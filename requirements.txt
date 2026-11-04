@@ -1,0 +1,12 @@
+fastapi==0.142.2
+uvicorn==0.53.0
+redis==6.4.0
+pyotp==2.9.0
+argon2-cffi==25.1.0
+bcrypt==5.0.0
+cryptography==50.0.2
+sqlalchemy==2.0.52
+pydantic==2.13.5
+pydantic-settings==2.15.0
+httpx==0.28.1
+pytest==9.1.1
