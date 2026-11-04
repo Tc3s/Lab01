@@ -119,8 +119,9 @@ docker compose ps
 docker compose logs -f web
 ```
 
-*Lưu ý về Port Mapping*:
-- Ứng dụng web chạy tại: `http://localhost:8000` (OpenAPI Swagger UI: `http://localhost:8000/docs`).
+*Lưu ý về Port Mapping & Giao Diện*:
+- **Web UI Dashboard tương tác**: `http://localhost:8000/` (đầy đủ chức năng login, MFA, tạo hoàn tiền CSKH, duyệt chi Kế toán, bảng test bench T1–T8 và xem SIEM audit log).
+- OpenAPI Swagger UI: `http://localhost:8000/docs`.
 - Redis container ánh xạ cổng host `6380:6379` (hoặc cấu hình qua biến `REDIS_PORT` trong `.env`) để tránh xung đột nếu máy trạm đã có Redis native chạy trên port 6379. Ứng dụng web trong Docker kết nối với Redis qua mạng nội bộ `redis://redis:6379/0`.
 
 Dừng hệ thống:

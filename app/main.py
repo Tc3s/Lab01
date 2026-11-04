@@ -179,6 +179,29 @@ app.include_router(refunds.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 
 
+# Static files & Web UI Mount
+import os
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+evidence_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "evidence")
+if os.path.exists(evidence_dir):
+    app.mount("/evidence", StaticFiles(directory=evidence_dir), name="evidence")
+
+
+@app.get("/", tags=["UI"])
+async def serve_ui():
+    """Serve the interactive Security Control Dashboard & Management UI."""
+    index_file = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {"message": "Welcome to Secure E-Commerce Admin Portal. Visit /docs for API documentation."}
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Service health check endpoint."""
