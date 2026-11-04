@@ -1,15 +1,15 @@
-version: "3.8"
-
+# Hardened Docker Compose Blueprint for E-Commerce Admin Portal
 services:
   redis:
     image: redis:7-alpine
     container_name: ecomm_redis
     restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    # Maps host port 6380 (default) to container port 6379 to prevent collisions if host runs native Redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -17,24 +17,32 @@ services:
       retries: 5
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ecomm_app
     restart: always
     depends_on:
       redis:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "${WEB_PORT:-8000}:8000"
     environment:
-      - PROJECT_NAME=Secure E-Commerce Admin Portal
-      - APP_ENV=production
-      - DEBUG=False
+      - PROJECT_NAME=${PROJECT_NAME:-Secure E-Commerce Admin Portal}
+      - APP_ENV=${APP_ENV:-production}
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY:-e-commerce-lab-secure-secret-key-min-32-chars-long!}
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=sqlite:///./data/ecommerce.db
-      - SESSION_IDLE_TIMEOUT_SECONDS=900
-      - SESSION_ABSOLUTE_TIMEOUT_SECONDS=28800
-      - OTP_REPLAY_TTL_SECONDS=90
-      - AUDIT_LOG_FILE=logs/audit.log
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-session_id}
+      - SESSION_IDLE_TIMEOUT_SECONDS=${SESSION_IDLE_TIMEOUT_SECONDS:-900}
+      - SESSION_ABSOLUTE_TIMEOUT_SECONDS=${SESSION_ABSOLUTE_TIMEOUT_SECONDS:-28800}
+      - PRE_MFA_SESSION_TIMEOUT_SECONDS=${PRE_MFA_SESSION_TIMEOUT_SECONDS:-300}
+      - OTP_REPLAY_TTL_SECONDS=${OTP_REPLAY_TTL_SECONDS:-90}
+      - COOKIE_HTTPONLY=${COOKIE_HTTPONLY:-True}
+      - COOKIE_SECURE=${COOKIE_SECURE:-False}
+      - COOKIE_SAMESITE=${COOKIE_SAMESITE:-lax}
+      - AUDIT_LOG_FILE=${AUDIT_LOG_FILE:-logs/audit.log}
     volumes:
       - app_data:/app/data
       - app_logs:/app/logs
@@ -42,7 +50,11 @@ services:
 
 volumes:
   redis_data:
+    name: ecomm_redis_data
   app_data:
+    name: ecomm_app_data
   app_logs:
+    name: ecomm_app_logs
   app_evidence:
+    name: ecomm_app_evidence
 

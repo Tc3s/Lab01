@@ -4,7 +4,7 @@
   "status": "PASS",
   "condition": "HTTP 403; audit result=DENIED; CSKH cannot approve refunds",
   "actor": "cskh_user",
-  "attempted_endpoint": "/api/v1/refunds/dac103d2-5c21-43d2-8298-8f4e85178035/approve",
+  "attempted_endpoint": "/api/v1/refunds/cdc1ce2c-435d-4c32-aee6-60ff928c66a6/approve",
   "response": {
     "status_code": 403,
     "body": {
@@ -18,17 +18,17 @@
     }
   },
   "audit_record": {
-    "timestamp": "2026-11-04T14:04:39.812786Z",
+    "timestamp": "2026-11-04T14:26:05.153456Z",
     "actor_id": 1,
     "role": "CSKH",
     "action": "RBAC_ACCESS_DENIED",
-    "object_id": "/api/v1/refunds/dac103d2-5c21-43d2-8298-8f4e85178035/approve",
+    "object_id": "/api/v1/refunds/cdc1ce2c-435d-4c32-aee6-60ff928c66a6/approve",
     "result": "DENIED",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t5-1793801079",
-    "session_id_hash": "cfbf09abdbc74f473570a097bf061fe1161451499f63bec71debadaa0315b62b",
+    "correlation_id": "test-t5-1793802365",
+    "session_id_hash": "cc57c421c609cc96b2a1e1528fd962ca7f95832e652f4b3b0515bdb137f7380a",
     "details": {
-      "path": "/api/v1/refunds/dac103d2-5c21-43d2-8298-8f4e85178035/approve",
+      "path": "/api/v1/refunds/cdc1ce2c-435d-4c32-aee6-60ff928c66a6/approve",
       "method": "POST",
       "required_roles": [
         "KETOAN"

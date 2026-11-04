@@ -1,4 +1,4 @@
-# BÀI THI GIỮA KỲ: AN TOÀN THƯƠNG MẠI ĐIỆN TỬ (LAB 01)
+# BÁO CÁO THI GIỮA KỲ: AN TOÀN THƯƠNG MẠI ĐIỆN TỬ (LAB 01)
 ## Cổng Quản Trị & Luồng Hoàn Tiền Bảo Mật (Secure Admin & Refund Portal)
 
 Dự án triển khai và kiểm chứng toàn diện **06 kiểm soát an ninh cốt lõi** và **08 test case bắt buộc (T1 – T8)** cho cổng quản trị sàn TMĐT, phân quyền nghiêm ngặt giữa CSKH, Kế toán và Admin trong luồng hoàn tiền nhạy cảm.
@@ -7,10 +7,26 @@ Dự án triển khai và kiểm chứng toàn diện **06 kiểm soát an ninh 
 
 ## 1. Kiến Trúc Hệ Thống & Quyết Định Bảo Mật (Security Architecture Decisions)
 
+Hệ thống được thiết kế theo nguyên lý Phòng thủ theo chiều sâu (Defense-in-Depth) với backend Python FastAPI kết hợp in-memory store Redis 7 và cơ sở dữ liệu quan hệ SQLAlchemy (SQLite/PostgreSQL):
+
+```text
+[ Client (Browser / Postman / Tests) ]
+                  │
+                  ▼
+       [ FastAPI Gateway / Uvicorn ]
+                  │
+       ┌──────────┴──────────┐
+       ▼                     ▼
+[ Redis 7 In-Memory ]  [ SQLAlchemy ORM ]
+- Atomic Anti-Replay   - SQLite DB (data/ecommerce.db)
+- Session Store & TTL  - Users & Refund Requests
+- Bulk Revocation Sets - Status & Masked PAN (last-4)
+```
+
 ### 1.1. TOTP RFC 6238 (Chuẩn hóa xác thực 2 lớp)
-- **Cơ chế**: Triển khai thuật toán HMAC-based One-Time Password dựa trên thời gian theo chuẩn RFC 6238, sử dụng bước nhảy thời gian cố định $T_0 = 30\text{s}$, độ dài 6 chữ số thập phân.
-- **Dung sai độ lệch đồng hồ (Clock Drift)**: Cho phép cửa sổ $\pm 1$ step (tổng cửa sổ 90 giây: $T-1$, $T$, $T+1$) để bù đắp sai số đồng hồ giữa client và server.
-- **Bảo mật Secret**: Khóa bí mật (`totp_secret`) được mã hóa và lưu trữ an toàn trong DB; tuyệt đối **không ghi log, không trả về API** và được bảo vệ bằng kiểu `SecretStr` / shield exception để tránh rò rỉ qua stacktrace.
+- **Cơ chế**: Triển khai thuật toán HMAC-based One-Time Password dựa trên thời gian theo chuẩn RFC 6238, sử dụng bước nhảy thời gian cố định $T_0 = 30\text{s}$, độ dài 6 chữ số thập phân (`pyotp.TOTP`).
+- **Dung sai độ lệch đồng hồ (Clock Drift)**: Cho phép cửa sổ $\pm 1$ step (tổng cửa sổ 90 giây: $T-1$, $T$, $T+1$) nhằm bù đắp sai số đồng hồ giữa client và server. Các mã ngoài cửa sổ này lập tức bị từ chối.
+- **Bảo mật Secret**: Khóa bí mật (`totp_secret`) được mã hóa và lưu trữ an toàn trong DB; tuyệt đối **không ghi log, không trả về API** và được bảo vệ để tránh rò rỉ qua stacktrace.
 
 ### 1.2. Chống Tái Sử Dụng OTP Bằng Redis (Anti-Replay via Atomic Lock)
 - **Vấn đề**: Trong cửa sổ 30s–90s, một OTP hợp lệ có thể bị kẻ tấn công nghe lén (Man-in-the-Middle) và gửi lại nhiều lần (Replay Attack).
@@ -22,11 +38,11 @@ Dự án triển khai và kiểm chứng toàn diện **06 kiểm soát an ninh 
   - `EX 90`: TTL 90 giây bao phủ toàn bộ cửa sổ chấp nhận $(\pm 1\text{ step})$. Sau 90s, mã OTP đó tự động hết hạn về mặt toán học.
 
 ### 1.3. Session Hardening & Chống Session Fixation
-- **Cookie Security Flags**: Cấu hình `HttpOnly=True` (chặn XSS đánh cắp cookie qua `document.cookie`), `SameSite=Lax/Strict` (ngăn chặn CSRF), `Secure` (chỉ truyền qua HTTPS trên production).
+- **Cookie Security Flags**: Cấu hình `HttpOnly=True` (chặn XSS đánh cắp cookie qua `document.cookie`), `SameSite=Lax` (ngăn chặn CSRF), `Secure=False/True` (tự động kích hoạt khi dùng HTTPS trên production).
 - **Session Rotation (Xoay Session ID)**:
-  - Khi đăng nhập password, hệ thống chỉ cấp session tạm thời `pre_mfa` (chưa có quyền hạn, TTL 5 phút).
+  - Khi đăng nhập password thành công, hệ thống chỉ cấp session tạm thời `pre_mfa` (chưa có quyền hạn nghiệp vụ, TTL 5 phút).
   - Ngay khi MFA thành công, hệ thống lập tức **hủy bỏ hoàn toàn `pre_mfa` session** và sinh ra Session ID mới (256-bit mật mã học an toàn qua `secrets.token_urlsafe(32)`).
-  - Ngăn chặn hoàn toàn kẻ tấn công cài đặt trước Session ID cho nạn nhân.
+  - Ngăn chặn hoàn toàn kẻ tấn công cài đặt trước Session ID cho nạn nhân (Session Fixation Defense). Request dùng Session ID cũ sẽ nhận `401 Unauthorized`.
 - **Ràng Buộc Thời Gian Sống (Timeouts)**:
   - **Idle Timeout**: 15 phút không có thao tác (được reset qua `touch_session`).
   - **Absolute Timeout**: 8 giờ tối đa kể từ thời điểm đăng nhập, không thể gia hạn thêm.
@@ -87,23 +103,25 @@ Dự án triển khai và kiểm chứng toàn diện **06 kiểm soát an ninh 
 ## 4. Hướng Dẫn Cài Đặt & Khởi Chạy (Deployment Guide)
 
 ### Cách 1: Khởi chạy bằng Docker Compose (Khuyến nghị)
-Hệ thống đã được đóng gói sẵn toàn bộ ứng dụng web và Redis container:
+Hệ thống đã được đóng gói sẵn toàn bộ ứng dụng web và Redis container với cơ chế healthcheck tự động:
 
 ```bash
 # 1. Di chuyển vào thư mục dự án
 cd "/home/tcus/Desktop/An toan thuong mai dien tu"
 
-# 2. Khởi chạy Docker Compose (nếu cần quyền sudo: mật khẩu root123)
+# 2. Khởi chạy Docker Compose (sử dụng sudo mật khẩu root123 nếu cần)
 docker compose up --build -d
 
-# 3. Kiểm tra trạng thái containers
+# 3. Kiểm tra trạng thái containers và healthcheck
 docker compose ps
 
 # 4. Xem log audit trực tiếp
 docker compose logs -f web
 ```
 
-Ứng dụng sẽ hoạt động tại: `http://localhost:8000` (Tài liệu OpenAPI Swagger UI tại: `http://localhost:8000/docs`).
+*Lưu ý về Port Mapping*:
+- Ứng dụng web chạy tại: `http://localhost:8000` (OpenAPI Swagger UI: `http://localhost:8000/docs`).
+- Redis container ánh xạ cổng host `6380:6379` (hoặc cấu hình qua biến `REDIS_PORT` trong `.env`) để tránh xung đột nếu máy trạm đã có Redis native chạy trên port 6379. Ứng dụng web trong Docker kết nối với Redis qua mạng nội bộ `redis://redis:6379/0`.
 
 Dừng hệ thống:
 ```bash
@@ -131,7 +149,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ## 5. Hướng Dẫn Chạy Bộ Test Tự Động & Thu Thập Evidence
 
-Hệ thống cung cấp sẵn 2 phương thức kiểm thử tự động toàn diện:
+Hệ thống cung cấp sẵn các phương thức kiểm thử tự động toàn diện:
 
 ### 5.1. Chạy E2E Test Suite và tự động xuất file Evidence
 Script kiểm thử độc lập sẽ chạy tuần tự từ T1 đến T8, kiểm tra mã HTTP, phản hồi JSON, trạng thái Redis in-memory và kiểm tra file log:
@@ -146,7 +164,11 @@ Kết quả:
 
 ### 5.2. Chạy qua PyTest
 ```bash
+# Chạy bộ test E2E T1-T8
 pytest tests/test_e2e_security.py -v
+
+# Chạy toàn bộ 30 test cases bao gồm cả Adversarial Stress-Tests
+pytest tests/ -v
 ```
 
 ### 5.3. Sử dụng Postman Collection
@@ -160,7 +182,7 @@ pytest tests/test_e2e_security.py -v
 
 ```text
 .
-├── Dockerfile                   # Docker container build script
+├── Dockerfile                   # Docker container build script (hardened non-root user)
 ├── docker-compose.yml           # Docker Compose orchestrating App + Redis
 ├── requirements.txt             # Danh sách dependencies
 ├── .env.example                 # Mẫu cấu hình môi trường
@@ -189,7 +211,9 @@ pytest tests/test_e2e_security.py -v
 │           ├── refunds.py       # /refunds (CSKH create), /refunds/{id}/approve (KETOAN)
 │           └── admin.py         # /admin/audit-logs, /admin/users
 ├── tests/
-│   └── test_e2e_security.py     # Bộ kiểm thử PyTest 8/8 test cases T1-T8
+│   ├── test_e2e_security.py     # Bộ kiểm thử PyTest 8/8 test cases T1-T8
+│   ├── test_adversarial_auth.py # Adversarial stress tests cho Auth & Session
+│   └── test_adversarial_rbac_sod.py # Adversarial stress tests cho RBAC & SoD
 ├── scripts/
 │   ├── seed_db.py               # CLI tool seed DB
 │   └── run_e2e_tests.py         # Harness chạy E2E và trích xuất evidence T1-T8

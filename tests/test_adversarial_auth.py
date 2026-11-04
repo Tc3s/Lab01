@@ -504,28 +504,30 @@ def test_adv_10_password_change_multi_device_revocation():
                 }
                 await store_session(sid, data, ttl=900)
 
-            # Device 0 changes password
-            chg_resp = await client.post(
-                "/api/v1/auth/change-password",
-                json={"old_password": "Password123!", "new_password": "NewSecurePassword456!"},
-                cookies={settings.SESSION_COOKIE_NAME: device_sids[0]}
-            )
-            assert chg_resp.status_code == 200
+            try:
+                # Device 0 changes password
+                chg_resp = await client.post(
+                    "/api/v1/auth/change-password",
+                    json={"old_password": "Password123!", "new_password": "NewSecurePassword456!"},
+                    cookies={settings.SESSION_COOKIE_NAME: device_sids[0]}
+                )
+                assert chg_resp.status_code == 200
 
-            # Devices 1 and 2 must immediately be rejected
-            for sid in device_sids[1:]:
-                me_resp = await client.get("/api/v1/auth/me", cookies={settings.SESSION_COOKIE_NAME: sid})
-                assert me_resp.status_code == 401
-                assert me_resp.json().get("detail", {}).get("error") == "SESSION_EXPIRED"
-
-            # Revert password back so other tests aren't disturbed
-            db = SessionLocal()
-            from app.db.models import User
-            from app.core.security import hash_password
-            u = db.query(User).filter(User.id == 1).first()
-            u.password_hash = hash_password("Password123!")
-            db.commit()
-            db.close()
+                # Devices 1 and 2 must immediately be rejected
+                for sid in device_sids[1:]:
+                    me_resp = await client.get("/api/v1/auth/me", cookies={settings.SESSION_COOKIE_NAME: sid})
+                    assert me_resp.status_code == 401
+                    assert me_resp.json().get("detail", {}).get("error") == "SESSION_EXPIRED"
+            finally:
+                # Revert password back unconditionally so other tests aren't disturbed
+                db = SessionLocal()
+                from app.db.models import User
+                from app.core.security import hash_password
+                u = db.query(User).filter(User.id == 1).first()
+                if u:
+                    u.password_hash = hash_password("Password123!")
+                    db.commit()
+                db.close()
 
     run_async(_run())
 

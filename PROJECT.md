@@ -40,9 +40,9 @@ Every requirement from ORIGINAL_REQUEST.md and lab slides is cataloged below wit
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M1 | Core Security & State Infrastructure | Redis connection pool & atomic primitives, TOTP RFC 6238 engine, Audit logging engine with 9 fields & data masking, DB models & seed accounts | None | DONE |
-| M2 | Business Logic & API Endpoints | Authentication routes, post-MFA session rotation, RBAC/SoD dependency guards, refund workflow endpoints, session revocation handlers | M1 | PLANNED |
-| M3 | Automated E2E Test Suite & Evidence | Test runner for T1 through T8, evidence capture (`evidence/T*.json`), `evidence/SUMMARY.md` | M2 | PLANNED |
-| M4 | Containerization & Documentation | `Dockerfile`, `docker-compose.yml`, `.env.example`, comprehensive `README.md` | M2, M3 | PLANNED |
+| M2 | Business Logic & API Endpoints | Authentication routes, post-MFA session rotation, RBAC/SoD dependency guards, refund workflow endpoints, session revocation handlers | M1 | DONE |
+| M3 | Automated E2E Test Suite & Evidence | Test runner for T1 through T8, evidence capture (`evidence/T*.json`), `evidence/SUMMARY.md` | M2 | DONE |
+| M4 | Containerization & Documentation | `Dockerfile`, `docker-compose.yml`, `.env.example`, comprehensive `README.md` | M2, M3 | IN_PROGRESS |
 | M5 | Final Verification & Forensic Audit | End-to-end container test pass, adversarial validation, forensic auditor verification | M1, M2, M3, M4 | PLANNED |
 
 ## Interface Contracts
