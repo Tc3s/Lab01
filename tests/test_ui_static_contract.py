@@ -13,8 +13,9 @@ import pytest
 import requests
 from bs4 import BeautifulSoup
 
-INDEX_HTML_PATH = Path("/home/tcus/Desktop/An toan thuong mai dien tu/static/index.html")
-EVIDENCE_DIR = Path("/home/tcus/Desktop/An toan thuong mai dien tu/evidence")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+INDEX_HTML_PATH = PROJECT_ROOT / "static" / "index.html"
+EVIDENCE_DIR = PROJECT_ROOT / "evidence"
 
 
 @pytest.fixture(scope="module")

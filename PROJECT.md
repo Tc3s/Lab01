@@ -75,7 +75,7 @@ Every requirement from ORIGINAL_REQUEST.md and lab slides is cataloged below wit
 
 ## Code Layout
 ```
-/home/tcus/Desktop/An toan thuong mai dien tu/
+./
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt

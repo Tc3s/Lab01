@@ -106,8 +106,8 @@ Hệ thống được thiết kế theo nguyên lý Phòng thủ theo chiều s�
 Hệ thống đã được đóng gói sẵn toàn bộ ứng dụng web và Redis container với cơ chế healthcheck tự động:
 
 ```bash
-# 1. Di chuyển vào thư mục dự án
-cd "/home/tcus/Desktop/An toan thuong mai dien tu"
+# 1. Di chuyển vào thư mục dự án sau khi clone
+cd ecommerce_security_lab
 
 # 2. Khởi chạy Docker Compose (sử dụng sudo mật khẩu root123 nếu cần)
 docker compose up --build -d
