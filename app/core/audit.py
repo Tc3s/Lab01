@@ -28,7 +28,7 @@ import re
 import sys
 import threading
 from datetime import datetime, timezone
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -281,3 +281,103 @@ def log_audit(
         session_type=session_type,
         details=details
     )
+
+
+# =============================================================================
+# Validation Error Sanitization & JSON Serialization Helpers
+# =============================================================================
+
+def _sanitize_serializable_value(val: Any) -> Any:
+    """Ensures any arbitrary value (including exceptions) is JSON serializable and masked."""
+    if isinstance(val, BaseException):
+        return mask_pan_in_str(str(val))
+    if isinstance(val, (int, float, bool, type(None))):
+        return val
+    if isinstance(val, (str, bytes)):
+        return mask_pan_in_str(str(val))
+    if isinstance(val, (list, tuple, set, frozenset)):
+        return [_sanitize_serializable_value(item) for item in val]
+    if isinstance(val, dict):
+        return {str(k): _sanitize_serializable_value(v) for k, v in val.items()}
+    # Fallback to string representation if not natively JSON serializable
+    try:
+        json.dumps(val)
+        return val
+    except (TypeError, OverflowError):
+        return mask_pan_in_str(str(val))
+
+
+def sanitize_validation_errors(errors: Union[List[Dict[str, Any]], Any]) -> List[Dict[str, Any]]:
+    """
+    Sanitizes Pydantic validation errors (HTTP 422):
+    1. Inspects `loc` hierarchy:
+       - If any element in `loc` indicates CVV -> input is replaced with "[REDACTED]".
+       - If any element indicates credentials/secrets/tokens/otp -> input is replaced with "[REDACTED]".
+       - If any element indicates PAN -> input is masked to ************last4 or [INVALID_PAN].
+    2. Ensures all objects in `ctx` (e.g. ValueError in ctx["error"]) and error dicts
+       are fully JSON serializable, preventing Starlette JSONResponse 500 TypeError crashes.
+    3. Defense-in-depth: runs mask_pan_in_str on msg and non-sensitive inputs.
+    """
+    if not isinstance(errors, (list, tuple)):
+        return sanitize_payload(errors)
+
+    sanitized_list = []
+    for raw_err in errors:
+        if not isinstance(raw_err, dict):
+            sanitized_list.append(_sanitize_serializable_value(raw_err))
+            continue
+
+        err = dict(raw_err)
+
+        # 1. Normalize and inspect loc hierarchy
+        loc = list(err.get("loc", ()))
+        err["loc"] = loc
+        loc_str_parts = [str(part).lower().strip() for part in loc]
+
+        is_cvv = any(is_cvv_key(p) for p in loc_str_parts)
+        is_pan = any(is_pan_key(p) for p in loc_str_parts)
+        is_redact = any(is_redact_key(p) or "otp" in p for p in loc_str_parts)
+
+        # 2. Sanitize input field if present
+        if "input" in err:
+            inp = err["input"]
+            if is_cvv or is_redact:
+                err["input"] = "[REDACTED]"
+            elif is_pan:
+                if inp is None:
+                    err["input"] = "[REDACTED]"
+                else:
+                    digits = re.sub(r"\D", "", str(inp))
+                    if len(digits) >= 4:
+                        err["input"] = f"************{digits[-4:]}"
+                    else:
+                        err["input"] = "[INVALID_PAN]"
+            else:
+                # Non-sensitive field: sanitize any accidental card numbers/CVVs in payload
+                err["input"] = _sanitize_serializable_value(sanitize_payload(inp))
+
+        # 3. Sanitize msg
+        if "msg" in err and isinstance(err["msg"], str):
+            err["msg"] = mask_pan_in_str(err["msg"])
+
+        # 4. Sanitize ctx
+        if "ctx" in err:
+            ctx = err["ctx"]
+            if isinstance(ctx, dict):
+                clean_ctx = {}
+                for ck, cv in ctx.items():
+                    ck_lower = str(ck).lower().strip()
+                    if is_cvv_key(ck_lower) or is_redact_key(ck_lower):
+                        clean_ctx[ck] = "[REDACTED]"
+                    elif is_pan_key(ck_lower):
+                        digits = re.sub(r"\D", "", str(cv))
+                        clean_ctx[ck] = f"************{digits[-4:]}" if len(digits) >= 4 else "[INVALID_PAN]"
+                    else:
+                        clean_ctx[ck] = _sanitize_serializable_value(cv)
+                err["ctx"] = clean_ctx
+            else:
+                err["ctx"] = _sanitize_serializable_value(ctx)
+
+        sanitized_list.append(err)
+
+    return sanitized_list

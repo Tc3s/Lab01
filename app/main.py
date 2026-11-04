@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.deps import get_source_ip
 from app.api.v1 import admin, auth, refunds
-from app.core.audit import log_audit, sanitize_payload
+from app.core.audit import log_audit, sanitize_payload, sanitize_validation_errors
 from app.core.config import settings
 from app.core.redis import close_redis_pool, init_redis_pool
 from app.db.database import SessionLocal, init_db
@@ -124,10 +124,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """
     Global handler for Pydantic schema validation failures (HTTP 422).
-    Sanitizes raw input in error structures to prevent cardholder/secret leakage into audit trails.
+    Sanitizes raw input in error structures to prevent cardholder/secret leakage into audit trails
+    and client responses, and ensures all objects (e.g. ValueError in ctx['error']) are JSON-serializable.
     """
     cid = getattr(request.state, "correlation_id", "unknown")
-    sanitized_errors = sanitize_payload(exc.errors())
+    sanitized_errors = sanitize_validation_errors(exc.errors())
     log_audit(
         actor_id=None,
         role="ANONYMOUS",
@@ -141,7 +142,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors()},
+        content={"detail": sanitized_errors},
         headers={"X-Correlation-ID": cid}
     )
 

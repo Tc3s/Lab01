@@ -7,7 +7,7 @@ Segregation of Duties (SoD):
 - KETOAN: Approves (POST /refunds/{id}/approve) or rejects (POST /refunds/{id}/reject) refund requests.
 - Direct call by CSKH to approve/reject endpoint MUST yield 403 Forbidden with audit result=DENIED.
 - Cardholder data protection: PAN masked to last-4, CVV stripped immediately, never persisted or logged.
-- Collusion defense: Creator cannot approve their own refund request.
+- Collusion defense: Creator cannot approve or reject their own refund request.
 """
 
 from typing import Any, Dict, List, Optional
@@ -202,6 +202,7 @@ async def reject_refund(
     Reject a refund request.
     Strict Segregation of Duties: ONLY KETOAN role can reject.
     CSKH calling this endpoint receives 403 Forbidden + audit result=DENIED.
+    Creator self-rejection defense: If creator attempts to reject their own refund, returns 403.
     """
     actor_id = session.get("user_id")
     actor_role = session.get("role")
@@ -212,6 +213,24 @@ async def reject_refund(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": "NOT_FOUND", "message": f"Refund request {refund_id} not found"}
+        )
+
+    # Segregation of Duties: Creator cannot reject their own refund
+    if refund.created_by_id == actor_id:
+        log_audit(
+            actor_id=actor_id,
+            role=actor_role,
+            action="REFUND_REJECT_SELF_COLLUSION",
+            object_id=str(refund.id),
+            result="DENIED",
+            source_ip=source_ip,
+            correlation_id=correlation_id,
+            session_id=session_id,
+            details={"error": "Creator cannot reject own refund request"}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "SOD_VIOLATION", "message": "Creator cannot reject their own refund request"}
         )
 
     if refund.status != RefundStatus.PENDING.value:

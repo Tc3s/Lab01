@@ -7,15 +7,15 @@
   "submitted_cvv": "839",
   "database_stored_pan_last4": "4444",
   "raw_audit_log_entry": {
-    "timestamp": "2026-11-04T13:41:54.636151Z",
+    "timestamp": "2026-11-04T13:50:46.255088Z",
     "actor_id": 1,
     "role": "CSKH",
     "action": "REFUND_CREATE",
-    "object_id": "cc111f38-2e60-428a-997c-5a63bf8c5e4d",
+    "object_id": "7feae25e-0f5a-4218-b6ab-c38ee6dfbdc9",
     "result": "SUCCESS",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t7-1793799714",
-    "session_id_hash": "7478f962aa2d999b5cbb570a482b77ecc3cb4d4ff5d7fb9b015ec23d5c8d539a",
+    "correlation_id": "test-t7-1793800246",
+    "session_id_hash": "127e627616443a0e9b21025cdab90e2d6ed79bc9d744bbc9471f15cd555251df",
     "details": {
       "order_id": "ORD-MASK-PCI",
       "amount": 999999.0,
@@ -25,7 +25,7 @@
     }
   },
   "verifications": {
-    "cvv_absent_from_log": true,
+    "cvv_absent_from_details": true,
     "full_pan_absent_from_log": true,
     "pan_masked_properly": true
   }

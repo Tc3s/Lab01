@@ -4,6 +4,11 @@ Location: tests/test_e2e_security.py
 """
 
 import asyncio
+import json
+import os
+import time
+import uuid
+from typing import Optional
 import httpx
 import pytest
 import redis.asyncio as aioredis
@@ -14,6 +19,25 @@ from app.db.database import SessionLocal, init_db
 from app.db.models import RefundRequest
 from app.db.seed import SEED_USERS, seed_users
 from app.main import app
+
+
+def _find_audit_entry(correlation_id: str, action: Optional[str] = None) -> Optional[dict]:
+    """Helper to inspect logs/audit.log deterministically by correlation_id."""
+    if not os.path.exists(settings.AUDIT_LOG_FILE):
+        return None
+    with open(settings.AUDIT_LOG_FILE, "r", encoding="utf-8") as f:
+        for line in reversed(f.readlines()):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+                if record.get("correlation_id") == correlation_id:
+                    if action is None or record.get("action") == action:
+                        return record
+            except Exception:
+                pass
+    return None
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -216,10 +240,12 @@ def test_t7_log_masking():
 
             pan_raw = "4556-7890-1234-5678"
             cvv_raw = "987"
+            corr_id = f"pytest-t7-{int(time.time())}"
             resp = await client.post(
                 "/api/v1/refunds",
                 json={"order_id": "ORD-T7-PCI-PYTEST", "customer_name": "Masking Check", "amount": 10000.0, "reason": "PCI", "pan": pan_raw, "cvv": cvv_raw},
-                cookies={settings.SESSION_COOKIE_NAME: sid}
+                cookies={settings.SESSION_COOKIE_NAME: sid},
+                headers={"X-Correlation-ID": corr_id}
             )
             assert resp.status_code == 201
             assert resp.json()["pan_last4"] == "5678"
@@ -228,6 +254,175 @@ def test_t7_log_masking():
             rf = db.query(RefundRequest).filter(RefundRequest.order_id == "ORD-T7-PCI-PYTEST").first()
             assert rf.pan_last4 == "5678"
             db.close()
+
+            # Audit log verification
+            audit_record = _find_audit_entry(corr_id, "REFUND_CREATE")
+            assert audit_record is not None, "Audit record for T7 missing"
+            details = audit_record.get("details", {})
+            assert "cvv" not in details, "CVV key present in audit details"
+            assert cvv_raw not in json.dumps(details), "CVV value leaked into audit details"
+            assert pan_raw not in json.dumps(audit_record), "Raw PAN leaked into audit record"
+            assert "************5678" in json.dumps(audit_record), "PAN not properly masked in audit record"
+
+    run_async(_test())
+
+
+def test_t7_regression_invalid_cvv_sanitized():
+    """Regression: Invalid CVV returns HTTP 422 (not 500) and strips CVV from audit log and response."""
+    async def _test():
+        await _clean_replay_keys()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            l = await client.post("/api/v1/auth/login", json={"username": "cskh_user", "password": "Password123!"})
+            otp = generate_totp_code(SEED_USERS[0]["totp_secret"])
+            m = await client.post("/api/v1/auth/mfa/verify", json={"otp_code": otp}, cookies=l.cookies)
+            sid = m.cookies.get(settings.SESSION_COOKIE_NAME)
+
+            bad_cvv = "12345"
+            corr_id = f"pytest-reg-bad-cvv-{int(time.time())}"
+            resp = await client.post(
+                "/api/v1/refunds",
+                json={
+                    "order_id": "ORD-REG-CVV",
+                    "customer_name": "Regression CVV",
+                    "amount": 1000.0,
+                    "reason": "Test Bad CVV",
+                    "pan": "4111-2222-3333-4444",
+                    "cvv": bad_cvv
+                },
+                cookies={settings.SESSION_COOKIE_NAME: sid},
+                headers={"X-Correlation-ID": corr_id}
+            )
+            # Must return HTTP 422, never crash with HTTP 500
+            assert resp.status_code == 422, f"Expected 422, got {resp.status_code}"
+
+            # Response body must be valid JSON and not leak CVV
+            body = resp.json()
+            assert "detail" in body
+            assert bad_cvv not in resp.text, "Bad CVV leaked in response body"
+
+            # Audit log check
+            audit_record = _find_audit_entry(corr_id, "VALIDATION_ERROR")
+            assert audit_record is not None, "VALIDATION_ERROR audit record not found"
+            details = audit_record.get("details", {})
+            assert bad_cvv not in json.dumps(details), f"CRITICAL: Invalid CVV {bad_cvv} leaked into audit details"
+
+    run_async(_test())
+
+
+def test_t7_regression_invalid_pan_sanitized():
+    """Regression: Invalid PAN (short & bad chars) returns HTTP 422 (not 500) and masks PAN in audit log."""
+    async def _test():
+        await _clean_replay_keys()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            l = await client.post("/api/v1/auth/login", json={"username": "cskh_user", "password": "Password123!"})
+            otp = generate_totp_code(SEED_USERS[0]["totp_secret"])
+            m = await client.post("/api/v1/auth/mfa/verify", json={"otp_code": otp}, cookies=l.cookies)
+            sid = m.cookies.get(settings.SESSION_COOKIE_NAME)
+
+            # Case 1: Short PAN (12 digits)
+            short_pan = "411122223333"
+            corr_id_short = f"pytest-reg-pan-short-{int(time.time())}"
+            resp_short = await client.post(
+                "/api/v1/refunds",
+                json={
+                    "order_id": "ORD-REG-PAN-SHORT",
+                    "customer_name": "Regression PAN Short",
+                    "amount": 1000.0,
+                    "reason": "Test Short PAN",
+                    "pan": short_pan,
+                    "cvv": "123"
+                },
+                cookies={settings.SESSION_COOKIE_NAME: sid},
+                headers={"X-Correlation-ID": corr_id_short}
+            )
+            assert resp_short.status_code == 422, f"Expected 422, got {resp_short.status_code}"
+            assert short_pan not in resp_short.text
+            audit_short = _find_audit_entry(corr_id_short, "VALIDATION_ERROR")
+            assert audit_short is not None
+            assert short_pan not in json.dumps(audit_short.get("details", {})), "Short PAN leaked into audit details"
+
+            # Case 2: Custom validator failure (invalid characters triggering ValueError)
+            bad_char_pan = "4111-XXXX-3333-4444"
+            corr_id_char = f"pytest-reg-pan-char-{int(time.time())}"
+            resp_char = await client.post(
+                "/api/v1/refunds",
+                json={
+                    "order_id": "ORD-REG-PAN-CHAR",
+                    "customer_name": "Regression PAN Char",
+                    "amount": 1000.0,
+                    "reason": "Test Bad Char PAN",
+                    "pan": bad_char_pan,
+                    "cvv": "123"
+                },
+                cookies={settings.SESSION_COOKIE_NAME: sid},
+                headers={"X-Correlation-ID": corr_id_char}
+            )
+            assert resp_char.status_code == 422, f"Expected 422, got {resp_char.status_code}"
+            assert bad_char_pan not in resp_char.text
+            audit_char = _find_audit_entry(corr_id_char, "VALIDATION_ERROR")
+            assert audit_char is not None
+            assert bad_char_pan not in json.dumps(audit_char.get("details", {})), "Bad char PAN leaked into audit details"
+
+    run_async(_test())
+
+
+def test_sod_rejection_self_collision():
+    """SoD Regression: Creator cannot reject their own refund request (HTTP 403 SOD_VIOLATION)."""
+    async def _test():
+        await _clean_replay_keys()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            # Login ketoan_user (id=2)
+            l_kt = await client.post("/api/v1/auth/login", json={"username": "ketoan_user", "password": "Password123!"})
+            otp_kt = generate_totp_code(SEED_USERS[1]["totp_secret"])
+            m_kt = await client.post("/api/v1/auth/mfa/verify", json={"otp_code": otp_kt}, cookies=l_kt.cookies)
+            assert m_kt.status_code == 200
+            sid_kt = m_kt.cookies.get(settings.SESSION_COOKIE_NAME)
+
+            # Insert refund created by ketoan_user (id=2)
+            rf_id = str(uuid.uuid4())
+            db = SessionLocal()
+            rf = RefundRequest(
+                id=rf_id,
+                order_id=f"ORD-SOD-REJ-{int(time.time())}",
+                customer_name="Self Rejection Test",
+                amount=100000.0,
+                reason="SoD Rejection Check",
+                pan_last4="1234",
+                status="PENDING",
+                created_by_id=2
+            )
+            db.add(rf)
+            db.commit()
+            db.close()
+
+            # Attempt self-rejection by creator (id=2)
+            corr_id_self = f"pytest-sod-rej-self-{int(time.time())}"
+            rej_self = await client.post(
+                f"/api/v1/refunds/{rf_id}/reject",
+                cookies={settings.SESSION_COOKIE_NAME: sid_kt},
+                headers={"X-Correlation-ID": corr_id_self}
+            )
+            assert rej_self.status_code == 403, f"Expected 403, got {rej_self.status_code}"
+            assert rej_self.json()["detail"]["error"] == "SOD_VIOLATION"
+
+            audit_self = _find_audit_entry(corr_id_self, "REFUND_REJECT_SELF_COLLUSION")
+            assert audit_self is not None
+            assert audit_self["result"] == "DENIED"
+
+            # CSKH attempt to reject -> 403 ACCESS_DENIED
+            l_cskh = await client.post("/api/v1/auth/login", json={"username": "cskh_user", "password": "Password123!"})
+            otp_cskh = generate_totp_code(SEED_USERS[0]["totp_secret"])
+            m_cskh = await client.post("/api/v1/auth/mfa/verify", json={"otp_code": otp_cskh}, cookies=l_cskh.cookies)
+            sid_cskh = m_cskh.cookies.get(settings.SESSION_COOKIE_NAME)
+
+            rej_cskh = await client.post(
+                f"/api/v1/refunds/{rf_id}/reject",
+                cookies={settings.SESSION_COOKIE_NAME: sid_cskh}
+            )
+            assert rej_cskh.status_code == 403
 
     run_async(_test())
 
