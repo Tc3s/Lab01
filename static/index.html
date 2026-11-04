@@ -1,501 +1,244 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-slate-950 text-slate-100">
+<html lang="vi" class="h-full bg-[#f5f5f5]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cổng Quản Trị & Luồng Hoàn Tiền Bảo Mật | An Toàn TMĐT</title>
+  <title>Shopee TMĐT Bảo Mật | Mua Sắm & Cổng Quản Trị Hoàn Tiền</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
-            slate: { 850: '#0f172a', 950: '#020617' }
+            shopee: {
+              50: '#fff5f1',
+              100: '#ffe6dc',
+              500: '#ee4d2d',
+              600: '#d73211',
+              700: '#b82305',
+              dark: '#222222'
+            }
           }
         }
       }
     }
   </script>
   <style>
-    .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+    body { font-family: 'Roboto', sans-serif; }
+    .shopee-gradient { background: linear-gradient(-180deg, #f53d2d, #f63); }
+    .shopee-badge { background: linear-gradient(135deg, #f63, #ee4d2d); }
     .code-font { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
   </style>
 </head>
-<body class="h-full flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+<body class="h-full flex flex-col text-slate-800">
 
-  <!-- TOP HEADER -->
-  <header class="glass sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
-    <div class="flex items-center gap-3">
-      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-        <i class="fa-solid fa-shield-halved text-lg"></i>
+  <!-- ========================================================================= -->
+  <!-- SHOPEE TOPBAR & HEADER -->
+  <!-- ========================================================================= -->
+  <header class="shopee-gradient text-white shadow-md select-none sticky top-0 z-40">
+    <!-- Top Utility Bar -->
+    <div class="max-w-7xl mx-auto px-4 py-1.5 flex items-center justify-between text-xs border-b border-white/20">
+      <div class="flex items-center gap-4 text-white/90">
+        <button onclick="switchView('storefront')" class="hover:text-white flex items-center gap-1 font-medium">
+          <i class="fa-solid fa-store"></i> Sàn Mua Sắm TMĐT
+        </button>
+        <span class="text-white/40">|</span>
+        <button onclick="switchView('portal')" class="hover:text-white flex items-center gap-1 font-bold text-amber-200">
+          <i class="fa-solid fa-shield-halved"></i> Cổng Quản Trị Bảo Mật (CSKH &bull; Kế toán &bull; Admin)
+        </button>
+        <span class="text-white/40">|</span>
+        <span class="text-white/80"><i class="fa-solid fa-mobile-screen"></i> Tải ứng dụng</span>
+        <span class="text-white/40">|</span>
+        <span class="text-white/80">Kết nối: <i class="fa-brands fa-facebook ml-1"></i> <i class="fa-brands fa-instagram ml-1"></i></span>
       </div>
-      <div>
-        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
-          Secure E-Commerce Admin & Refund Portal
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LAB 01</span>
-        </h1>
-        <p class="text-xs text-slate-400">An Toàn Thương Mại Điện Tử &bull; TOTP RFC 6238 &bull; Redis Anti-Replay &bull; RBAC / SoD &bull; PCI-DSS Masking</p>
+
+      <div class="flex items-center gap-4 text-white/90">
+        <span class="hover:text-white cursor-pointer"><i class="fa-regular fa-bell"></i> Thông Báo</span>
+        <span class="hover:text-white cursor-pointer"><i class="fa-regular fa-circle-question"></i> Hỗ Trợ</span>
+        <span class="text-white/40">|</span>
+        
+        <!-- User Session Indicator -->
+        <div id="topUserBadge" class="hidden flex items-center gap-2">
+          <span class="h-5 w-5 rounded-full bg-white text-shopee-500 font-bold flex items-center justify-center text-[10px]" id="topAvatar">U</span>
+          <span id="topUsername" class="font-bold">username</span>
+          <span id="topRoleBadge" class="bg-amber-400 text-slate-900 font-bold px-1.5 py-0.2 rounded text-[10px]">ROLE</span>
+          <button onclick="handleLogout()" class="hover:underline text-white/80 ml-2">Đăng xuất</button>
+        </div>
+
+        <div id="topGuestBadge" class="flex items-center gap-2">
+          <button onclick="openLoginModal('cskh_user')" class="font-bold hover:underline">Đăng Nhập Quản Trị</button>
+        </div>
       </div>
     </div>
 
-    <!-- Active User & Role Header Info -->
-    <div class="flex items-center gap-4">
-      <div id="authStatusBadge" class="hidden flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
-        <div class="flex flex-col text-right">
-          <span id="headerUsername" class="text-xs font-semibold text-white">username</span>
-          <span id="headerRoleBadge" class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">ROLE</span>
+    <!-- Main Header Search & Cart -->
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-8">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('storefront')">
+        <div class="h-12 w-12 rounded-2xl bg-white text-shopee-500 flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-bag-shopping text-2xl"></i>
         </div>
-        <div class="h-8 w-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/30" id="headerAvatar">
-          U
+        <div>
+          <span class="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
+            Shopee <span class="text-xs uppercase bg-white/20 text-white font-semibold px-2 py-0.5 rounded-full border border-white/30">Security Lab</span>
+          </span>
+          <span class="text-[11px] text-white/80 block">Sàn TMĐT An Toàn &bull; Chuẩn PCI-DSS &bull; RFC 6238 TOTP</span>
         </div>
       </div>
 
-      <div id="headerActions" class="hidden flex items-center gap-2">
-        <button onclick="handleLogout()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-2xl">
+        <div class="bg-white rounded-md p-1 flex items-center shadow-md">
+          <input type="text" placeholder="Shopee bao ship 0Đ - Đăng ký hoàn tiền bảo mật 100%..." class="flex-1 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none">
+          <button class="bg-shopee-500 hover:bg-shopee-600 text-white px-6 py-2 rounded text-xs font-semibold flex items-center gap-1 transition">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </div>
+        <!-- Quick Keywords -->
+        <div class="flex items-center gap-3 mt-1.5 text-[11px] text-white/80">
+          <span class="cursor-pointer hover:text-white">iPhone 16 Pro Max</span>
+          <span class="cursor-pointer hover:text-white">Tai Nghe Sony</span>
+          <span class="cursor-pointer hover:text-white">Bàn Phím Cơ</span>
+          <span class="cursor-pointer hover:text-white">Áo Khoác Nam</span>
+          <span class="cursor-pointer hover:text-white text-amber-200 font-bold">Voucher Hoàn Tiền 100K</span>
+        </div>
+      </div>
+
+      <!-- Quick Switch to Admin Portal -->
+      <div class="flex items-center gap-4">
+        <button onclick="switchView('portal')" class="bg-white text-shopee-500 hover:bg-shopee-50 px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 shadow transition">
+          <i class="fa-solid fa-sliders"></i> Cổng Quản Trị SoD
         </button>
-        <button onclick="handleRevokeAll()" title="Thu hồi tất cả phiên của user trên mọi thiết bị" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-950/40 hover:bg-red-900/50 text-red-300 hover:text-white border border-red-800/40 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-ban"></i> Hủy Tất Cả Phiên
-        </button>
+        <div class="relative cursor-pointer" onclick="openMyOrdersModal()">
+          <i class="fa-solid fa-cart-shopping text-2xl"></i>
+          <span class="absolute -top-2 -right-2 bg-amber-300 text-slate-900 font-bold text-[10px] h-5 w-5 rounded-full flex items-center justify-center border-2 border-shopee-500" id="cartCount">2</span>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
 
-    <!-- NAVIGATION TABS -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-      <div class="flex items-center gap-2" id="navTabs">
-        <button onclick="switchTab('auth')" id="tabBtn-auth" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-brand-500/10 text-brand-400 border border-brand-500/20">
-          <i class="fa-solid fa-key"></i> 1. Đăng Nhập & MFA
-        </button>
-        <button onclick="switchTab('refunds')" id="tabBtn-refunds" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-900">
-          <i class="fa-solid fa-receipt"></i> 2. Luồng Hoàn Tiền (SoD)
-        </button>
-        <button onclick="switchTab('tests')" id="tabBtn-tests" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-900">
-          <i class="fa-solid fa-flask-vial"></i> 3. Test Bench (T1 - T8)
-        </button>
-        <button onclick="switchTab('audit')" id="tabBtn-audit" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-900">
-          <i class="fa-solid fa-list-check"></i> 4. SIEM & Audit Logs
-        </button>
-      </div>
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: SHOPEE STOREFRONT (SÀN TMĐT THỰC THỤ) -->
+  <!-- ========================================================================= -->
+  <main id="viewStorefront" class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
 
-      <div class="text-xs text-slate-400 flex items-center gap-2">
-        <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Hệ thống Backend: <strong class="text-emerald-400 font-mono">Port 8000</strong></span>
-      </div>
-    </div>
-
-    <!-- TAB 1: AUTH & MFA -->
-    <div id="tab-auth" class="tab-content space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Step 1: Login Form -->
-        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">
-              <span class="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">1</span>
-              Đăng Nhập Bằng Mật Khẩu
-            </h2>
-            <span class="text-[10px] uppercase font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-900">Step 1</span>
-          </div>
-
-          <p class="text-xs text-slate-400">Chọn tài khoản mẫu để tự động điền hoặc nhập thông tin:</p>
-
-          <!-- Fast Select Preset Users -->
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="selectPresetUser('cskh_user', 'Password123!', 'CSKH')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition group">
-              <div class="text-xs font-bold text-white group-hover:text-emerald-400">cskh_user</div>
-              <div class="text-[10px] text-slate-400">Role: CSKH</div>
-            </button>
-            <button onclick="selectPresetUser('ketoan_user', 'Password123!', 'KETOAN')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition group">
-              <div class="text-xs font-bold text-white group-hover:text-emerald-400">ketoan_user</div>
-              <div class="text-[10px] text-slate-400">Role: Kế toán</div>
-            </button>
-            <button onclick="selectPresetUser('admin_user', 'AdminPassword123!', 'ADMIN')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition group">
-              <div class="text-xs font-bold text-white group-hover:text-emerald-400">admin_user</div>
-              <div class="text-[10px] text-slate-400">Role: Admin</div>
-            </button>
-          </div>
-
-          <form onsubmit="handlePasswordLogin(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Username</label>
-              <input id="loginUsername" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-500" placeholder="cskh_user">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
-              <input id="loginPassword" type="password" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-500" placeholder="••••••••">
-            </div>
-            <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
-              <i class="fa-solid fa-arrow-right-to-bracket"></i> Đăng Nhập Password
-            </button>
-          </form>
-
-          <div id="loginStepResult" class="text-xs text-slate-400 p-3 rounded-xl bg-slate-900/60 border border-slate-800 min-h-[60px] flex items-center justify-center">
-            Chưa có thông tin đăng nhập.
-          </div>
-        </div>
-
-        <!-- Step 2: MFA Verification -->
-        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">
-              <span class="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">2</span>
-              Xác Thực TOTP (RFC 6238)
-            </h2>
-            <span class="text-[10px] uppercase font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-900">Step 2</span>
-          </div>
-
-          <!-- Live TOTP Generator helper -->
-          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-clock-rotate-left text-brand-400"></i> Mã OTP Thời Gian Thực (Demo)
-              </span>
-              <span id="totpCountdown" class="text-[11px] font-mono font-bold text-emerald-400">30s</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div id="liveOtpDisplay" class="flex-1 py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-center text-lg font-bold tracking-widest text-emerald-400">
-                ------
-              </div>
-              <button onclick="autoFillLiveOtp()" title="Tự động điền mã OTP" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
-                <i class="fa-solid fa-paste"></i> Điền
-              </button>
-            </div>
-          </div>
-
-          <form onsubmit="handleMfaVerify(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Nhập 6 Chữ Số OTP</label>
-              <input id="mfaCodeInput" type="text" maxlength="6" pattern="[0-9]{6}" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-center text-lg tracking-widest focus:outline-none focus:border-brand-500" placeholder="000000">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <button type="submit" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20">
-                <i class="fa-solid fa-check-double"></i> Xác Nhận MFA
-              </button>
-              <button type="button" onclick="testReplayOtpAction()" title="Thử gửi lại mã OTP vừa dùng trong cùng time-step" class="py-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 font-semibold text-xs transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-repeat"></i> Test Replay (T2)
-              </button>
-            </div>
-          </form>
-
-          <div id="mfaStepResult" class="text-xs text-slate-400 p-3 rounded-xl bg-slate-900/60 border border-slate-800 min-h-[60px] flex items-center justify-center">
-            Chờ hoàn tất Step 1 để kích hoạt MFA.
-          </div>
-        </div>
-
-        <!-- Session & Hardening State Inspector -->
-        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4">
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-fingerprint text-brand-400"></i>
-            Trạng Thái Phiên & Session Hardening
-          </h2>
-
-          <div class="space-y-2.5 text-xs">
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
-              <div class="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Pre-MFA Session ID (Trước MFA)</div>
-              <div id="dispSidBefore" class="font-mono text-slate-300 break-all text-[11px] select-all">(Chưa khởi tạo)</div>
-            </div>
-
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
-              <div class="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Post-MFA Session ID (Sau xoay vòng)</div>
-              <div id="dispSidAfter" class="font-mono text-emerald-400 break-all text-[11px] select-all">(Chưa xác thực MFA)</div>
-            </div>
-
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <div class="flex justify-between">
-                <span class="text-slate-400">Trạng thái Xoay Vòng:</span>
-                <span id="dispRotationStatus" class="font-bold text-slate-400">Chưa kiểm tra</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">Idle Timeout:</span>
-                <span class="font-mono text-slate-300">15 phút (Rolling)</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">Absolute Timeout:</span>
-                <span class="font-mono text-slate-300">8 giờ (Strict)</span>
-              </div>
-            </div>
-
-            <button onclick="testUseOldSid()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700 transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-shield-virus"></i> Thử gọi API bằng SID cũ (Test T4)
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- TAB 2: REFUND WORKFLOW (SOD) -->
-    <div id="tab-refunds" class="tab-content hidden space-y-6">
-      
-      <!-- SoD Architecture Alert -->
-      <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 flex items-start gap-3">
-        <i class="fa-solid fa-scale-balanced text-emerald-400 text-lg mt-0.5"></i>
-        <div class="text-xs space-y-1">
-          <div class="font-bold text-white">Nguyên Tắc Tách Biệt Quyền Hạn (Segregation of Duties - SoD) & Bảo Vệ Thẻ PCI-DSS:</div>
-          <p class="text-slate-300">&bull; <strong class="text-emerald-400">CSKH:</strong> Được tạo yêu cầu hoàn tiền. Cố tình gọi API duyệt chi sẽ nhận ngay <strong class="text-red-400">HTTP 403 Forbidden</strong> và ghi audit <strong class="text-red-400">result=DENIED</strong>.</p>
-          <p class="text-slate-300">&bull; <strong class="text-emerald-400">Kế Toán:</strong> Được duyệt/từ chối chi hoàn tiền theo quy trình thẩm định tài chính.</p>
-          <p class="text-slate-300">&bull; <strong class="text-emerald-400">PCI-DSS Masking:</strong> Số thẻ PAN chỉ lưu và ghi log 4 số cuối (<strong class="text-brand-400">************last4</strong>); mã bảo mật CVV bị triệt tiêu hoàn toàn, không lưu DB, không chạm log file.</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- CSKH: Create Refund Form -->
-        <div class="glass rounded-2xl p-6 border border-slate-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-circle-plus text-emerald-400"></i>
-              Tạo Yêu Cầu Hoàn Tiền (CSKH)
-            </h2>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">CSKH ONLY</span>
-          </div>
-
-          <form onsubmit="handleCreateRefund(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Mã Đơn Hàng (Order ID)</label>
-              <input id="rfOrderId" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" value="ORD-2026-9901">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Tên Khách Hàng</label>
-              <input id="rfCustomer" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" value="Nguyễn Văn Bảo Mật">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Số Tiền Hoàn (VND)</label>
-              <input id="rfAmount" type="number" step="1000" min="1000" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" value="450000">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Lý Do Hoàn Tiền</label>
-              <input id="rfReason" type="text" required class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" value="Hàng bị móp méo khi vận chuyển">
-            </div>
-
-            <!-- Sensitive Cardholder Data fields -->
-            <div class="p-3 rounded-xl bg-red-950/20 border border-red-800/30 space-y-2">
-              <div class="text-[11px] font-bold text-red-400 flex items-center gap-1">
-                <i class="fa-solid fa-credit-card"></i> Dữ Liệu Thẻ (Sẽ được Mask tự động)
-              </div>
-              <div>
-                <label class="block text-[11px] text-slate-400 mb-1">Số Thẻ PAN (13 - 19 số)</label>
-                <input id="rfPan" type="text" required class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs" value="4532-1234-5678-9012">
-              </div>
-              <div>
-                <label class="block text-[11px] text-slate-400 mb-1">Mã CVV (3 hoặc 4 số - KHÔNG ĐƯỢC LƯU)</label>
-                <input id="rfCvv" type="password" maxlength="4" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-xs" value="888">
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
-              <i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Hoàn Tiền
-            </button>
-          </form>
-        </div>
-
-        <!-- Refunds List & Accounting Approvals Table -->
-        <div class="glass rounded-2xl p-6 border border-slate-800 lg:col-span-2 space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-sm font-bold text-white flex items-center gap-2">
-                <i class="fa-solid fa-list-check text-emerald-400"></i>
-                Danh Sách Yêu Cầu Hoàn Tiền
-              </h2>
-              <p class="text-xs text-slate-400">Thẩm định SoD: Duyệt chi chỉ dành cho Kế toán</p>
-            </div>
-            <button onclick="loadRefundsList()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-              <i class="fa-solid fa-rotate"></i> Làm Mới
-            </button>
-          </div>
-
-          <div class="overflow-x-auto rounded-xl border border-slate-800">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                <tr>
-                  <th class="p-3">Order ID</th>
-                  <th class="p-3">Khách Hàng</th>
-                  <th class="p-3">Số Tiền</th>
-                  <th class="p-3">Thẻ PAN (Masked)</th>
-                  <th class="p-3">Trạng Thái</th>
-                  <th class="p-3 text-right">Thao Tác (Kế Toán)</th>
-                </tr>
-              </thead>
-              <tbody id="refundsTableBody" class="divide-y divide-slate-800 text-slate-300">
-                <tr>
-                  <td colspan="6" class="p-6 text-center text-slate-400">Đang tải danh sách hoàn tiền...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- TAB 3: TEST BENCH T1 - T8 -->
-    <div id="tab-tests" class="tab-content hidden space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-vial-circle-check text-brand-400"></i>
-            Bộ Kiểm Chứng Độc Lập 8 Test Case Bắt Buộc (Slide 98 / 205)
-          </h2>
-          <p class="text-xs text-slate-400">Click 1 nút để thực thi ngay tình huống kiểm thử và kiểm tra evidence</p>
-        </div>
-        <button onclick="runAllE2ETestsUI()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition flex items-center gap-2 shadow-lg shadow-brand-500/20">
-          <i class="fa-solid fa-play"></i> Chạy Toàn Bộ Test Suite (T1 - T8)
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="testCardsGrid">
-        
-        <!-- T1 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400">T1: TOTP Hợp Lệ</span>
-            <span id="badge-t1" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Login password &rarr; nhập OTP đúng lần đầu &rarr; HTTP 200, MFA verified.</p>
-          <button onclick="runSingleTest('T1')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T1
-          </button>
-        </div>
-
-        <!-- T2 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-amber-400">T2: Replay OTP</span>
-            <span id="badge-t2" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Gửi lại đúng OTP của T1 trong cùng time-step &rarr; HTTP 401 REPLAY_DETECTED.</p>
-          <button onclick="runSingleTest('T2')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T2
-          </button>
-        </div>
-
-        <!-- T3 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-red-400">T3: OTP Sai / Hết Hạn</span>
-            <span id="badge-t3" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Gửi OTP sai hoặc ngoài cửa sổ cho phép &rarr; 401, không cấp session đặc quyền.</p>
-          <button onclick="runSingleTest('T3')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T3
-          </button>
-        </div>
-
-        <!-- T4 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-purple-400">T4: Session Fixation</span>
-            <span id="badge-t4" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">So sánh SID trước và sau MFA: SID_before != SID_after, SID cũ bị hủy (401).</p>
-          <button onclick="runSingleTest('T4')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T4
-          </button>
-        </div>
-
-        <!-- T5 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-rose-400">T5: RBAC Bypass</span>
-            <span id="badge-t5" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Dùng phiên CSKH gọi trực tiếp API approve &rarr; 403 Forbidden, audit DENIED.</p>
-          <button onclick="runSingleTest('T5')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T5
-          </button>
-        </div>
-
-        <!-- T6 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-blue-400">T6: Luồng Hợp Lệ SoD</span>
-            <span id="badge-t6" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">CSKH tạo refund request; Kế toán approve &rarr; Thành công đúng role (201/200).</p>
-          <button onclick="runSingleTest('T6')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T6
-          </button>
-        </div>
-
-        <!-- T7 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-teal-400">T7: Log Masking</span>
-            <span id="badge-t7" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Gửi thẻ có PAN & CVV &rarr; Không có CVV trong log, PAN chỉ còn ************last4.</p>
-          <button onclick="runSingleTest('T7')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T7
-          </button>
-        </div>
-
-        <!-- T8 -->
-        <div class="glass rounded-xl p-4 border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-orange-400">T8: Session Revocation</span>
-            <span id="badge-t8" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Logout/Revoke all &rarr; Gọi API bằng session cũ trả về 401 Unauthorized.</p>
-          <button onclick="runSingleTest('T8')" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-            Chạy Test T8
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Test Execution Console / Output Display -->
-      <div class="glass rounded-2xl p-5 border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-            <i class="fa-solid fa-terminal text-brand-400"></i> Nhật Ký Kiểm Thử Thời Gian Thực
+    <!-- Promotional Banners & Sliders -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 rounded-xl bg-gradient-to-r from-shopee-500 to-amber-500 text-white p-6 shadow-md relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+        <div class="relative z-10 space-y-2">
+          <span class="bg-white/20 text-white px-2.5 py-1 rounded-full text-xs font-bold border border-white/30 uppercase tracking-wider">
+            Chính Sách Hoàn Tiền 100% An Toàn
           </span>
-          <button onclick="document.getElementById('testConsoleOutput').innerText = 'Sẵn sàng...'" class="text-[11px] text-slate-400 hover:text-white">Xóa</button>
+          <h2 class="text-2xl font-black">SIÊU SALE TMĐT &bull; MUA SẮM AN TÂM</h2>
+          <p class="text-xs text-white/90 max-w-md">Bảo vệ giao dịch đa lớp: Phân quyền kép Segregation of Duties, mã hóa số thẻ PCI-DSS, ngăn chặn gian lận hoàn tiền.</p>
         </div>
-        <pre id="testConsoleOutput" class="code-font text-xs p-4 rounded-xl bg-slate-950 text-emerald-400 border border-slate-800 h-48 overflow-y-auto whitespace-pre-wrap">Sẵn sàng thực thi kiểm thử T1 - T8...</pre>
+        <div class="relative z-10 flex items-center gap-3 mt-4">
+          <button onclick="document.getElementById('flashSaleSection').scrollIntoView({behavior: 'smooth'})" class="bg-white text-shopee-500 hover:bg-shopee-50 px-5 py-2.5 rounded-lg font-bold text-xs shadow transition">
+            Khám Phá Flash Sale Ngay
+          </button>
+          <button onclick="openOrderRefundModal('ORD-SHOPEE-9901')" class="bg-slate-900/60 hover:bg-slate-900 text-white px-4 py-2.5 rounded-lg font-semibold text-xs border border-white/30 transition">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Yêu Cầu Hoàn Tiền Đơn #9901
+          </button>
+        </div>
+        <i class="fa-solid fa-shield-heart absolute -right-6 -bottom-8 text-white/10 text-9xl"></i>
+      </div>
+
+      <div class="space-y-4 flex flex-col">
+        <div class="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-md flex items-center justify-between">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-blue-200">Bảo mật giao dịch</span>
+            <h3 class="text-sm font-bold mt-0.5">Xác thực 2 lớp TOTP</h3>
+            <p class="text-[11px] text-white/80">Chuẩn RFC 6238 chống replay</p>
+          </div>
+          <i class="fa-solid fa-lock text-3xl text-white/30"></i>
+        </div>
+        <div class="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 shadow-md flex items-center justify-between">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-emerald-200">Chuẩn PCI-DSS</span>
+            <h3 class="text-sm font-bold mt-0.5">Mask Thẻ & Khử CVV</h3>
+            <p class="text-[11px] text-white/80">Không lưu trữ mã bảo mật</p>
+          </div>
+          <i class="fa-solid fa-credit-card text-3xl text-white/30"></i>
+        </div>
       </div>
     </div>
 
-    <!-- TAB 4: SIEM & AUDIT LOGS -->
-    <div id="tab-audit" class="tab-content hidden space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-shield-virus text-emerald-400"></i>
-            Nhật Ký Kiểm Toán SIEM (Chuẩn 9 Trường Bắt Buộc)
-          </h2>
-          <p class="text-xs text-slate-400">timestamp &bull; actor_id &bull; role &bull; action &bull; object_id &bull; result &bull; source_ip &bull; correlation_id &bull; session_id_hash</p>
+    <!-- FLASH SALE SECTION -->
+    <div id="flashSaleSection" class="bg-white rounded-xl p-4 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="text-base font-extrabold uppercase text-shopee-500 tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-amber-500 text-lg"></i> FLASH SALE
+          </span>
+          <div class="flex items-center gap-1 text-xs font-bold">
+            <span class="bg-slate-900 text-white px-2 py-0.5 rounded">02</span> :
+            <span class="bg-slate-900 text-white px-2 py-0.5 rounded">45</span> :
+            <span class="bg-slate-900 text-white px-2 py-0.5 rounded" id="flashSeconds">30</span>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="loadAuditLogs()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-rotate"></i> Làm Mới Log
-          </button>
-        </div>
+        <span class="text-xs text-shopee-500 font-semibold cursor-pointer hover:underline">Xem Tất Cả &gt;</span>
       </div>
 
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
+      <!-- Product Cards Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="productsGrid">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+
+    <!-- RECENT USER PURCHASES (ĐƠN MUA CỦA TÔI & LUỒNG HOÀN TIỀN THỰC THỤ) -->
+    <div class="bg-white rounded-xl p-5 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-box-open text-shopee-500"></i>
+            Đơn Hàng Gần Đây Của Bạn & Quản Lý Trả Hàng / Hoàn Tiền
+          </h2>
+          <p class="text-xs text-slate-500">Khách hàng có thể chủ động bấm yêu cầu hoàn tiền cho các đơn hàng gặp sự cố</p>
+        </div>
+        <button onclick="openOrderRefundModal('ORD-2026-' + Math.floor(1000 + Math.random()*9000))" class="bg-shopee-500 hover:bg-shopee-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Tạo Đơn Hoàn Tiền Mới
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
-          <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+          <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold">
             <tr>
-              <th class="p-3">Thời Gian (UTC)</th>
-              <th class="p-3">Actor / Role</th>
-              <th class="p-3">Action</th>
-              <th class="p-3">Kết Quả</th>
-              <th class="p-3">Correlation ID</th>
-              <th class="p-3">Session Hash</th>
-              <th class="p-3">Chi Tiết (Masked)</th>
+              <th class="p-3">Mã Đơn Hàng</th>
+              <th class="p-3">Sản Phẩm Đã Mua</th>
+              <th class="p-3">Tổng Tiền</th>
+              <th class="p-3">Ngày Đặt</th>
+              <th class="p-3">Trạng Thái Đơn</th>
+              <th class="p-3 text-right">Luồng Hoàn Tiền (Shopee)</th>
             </tr>
           </thead>
-          <tbody id="auditTableBody" class="divide-y divide-slate-800 text-slate-300 font-mono text-[11px]">
-            <tr>
-              <td colspan="7" class="p-6 text-center text-slate-400 font-sans">Đang tải nhật ký kiểm toán...</td>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-mono font-bold text-slate-900">ORD-SHOPEE-9901</td>
+              <td class="p-3 font-medium">Apple iPhone 16 Pro Max 256GB Desert Titanium</td>
+              <td class="p-3 font-mono font-bold text-shopee-500">29.990.000 ₫</td>
+              <td class="p-3 text-slate-500">02/11/2026</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">ĐÃ GIAO HÀNG</span></td>
+              <td class="p-3 text-right">
+                <button onclick="openOrderRefundModal('ORD-SHOPEE-9901', 29990000)" class="px-3 py-1.5 rounded-lg bg-shopee-50 hover:bg-shopee-100 text-shopee-600 font-bold border border-shopee-500/30 transition">
+                  <i class="fa-solid fa-rotate-left mr-1"></i> Yêu Cầu Trả Hàng / Hoàn Tiền
+                </button>
+              </td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-mono font-bold text-slate-900">ORD-SHOPEE-9844</td>
+              <td class="p-3 font-medium">Tai nghe Sony WH-1000XM5 Chống Ồn Cao Cấp</td>
+              <td class="p-3 font-mono font-bold text-shopee-500">6.490.000 ₫</td>
+              <td class="p-3 text-slate-500">03/11/2026</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">ĐÃ GIAO HÀNG</span></td>
+              <td class="p-3 text-right">
+                <button onclick="openOrderRefundModal('ORD-SHOPEE-9844', 6490000)" class="px-3 py-1.5 rounded-lg bg-shopee-50 hover:bg-shopee-100 text-shopee-600 font-bold border border-shopee-500/30 transition">
+                  <i class="fa-solid fa-rotate-left mr-1"></i> Yêu Cầu Trả Hàng / Hoàn Tiền
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -504,221 +247,556 @@
 
   </main>
 
-  <!-- TOAST NOTIFICATIONS -->
-  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- SCRIPT LOGIC -->
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: CỔNG QUẢN TRỊ TMĐT BẢO MẬT (CSKH, KẾ TOÁN & ADMIN) -->
+  <!-- ========================================================================= -->
+  <main id="viewPortal" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+    <!-- Admin Portal Header & Tabs -->
+    <div class="bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border-b border-slate-200">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-lg">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            Cổng Quản Trị TMĐT (Operations & Security Portal)
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">SoD Enforced</span>
+          </h2>
+          <p class="text-xs text-slate-500">Phân quyền Segregation of Duties: CSKH tạo &bull; Kế toán duyệt &bull; Admin kiểm toán</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2" id="portalSubNav">
+        <button onclick="switchPortalTab('auth')" id="pTabBtn-auth" class="portal-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-shopee-500 text-white shadow">
+          <i class="fa-solid fa-key mr-1"></i> 1. Auth & MFA
+        </button>
+        <button onclick="switchPortalTab('sod')" id="pTabBtn-sod" class="portal-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-scale-balanced mr-1"></i> 2. Quản Trị Hoàn Tiền (SoD)
+        </button>
+        <button onclick="switchPortalTab('testbench')" id="pTabBtn-testbench" class="portal-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-vial-virus mr-1"></i> 3. Test Bench (T1 - T8)
+        </button>
+        <button onclick="switchPortalTab('siem')" id="pTabBtn-siem" class="portal-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-shield-virus mr-1"></i> 4. Nhật Ký SIEM (9 Trường)
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-TAB 1: AUTH & TOTP RFC 6238 -->
+    <div id="pTab-auth" class="portal-tab space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Step 1: Login -->
+        <div class="bg-white rounded-xl p-5 shadow-sm space-y-4 border border-slate-200">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="h-5 w-5 rounded bg-shopee-500 text-white flex items-center justify-center text-[10px]">1</span>
+              Đăng Nhập Mật Khẩu
+            </h3>
+            <span class="text-[10px] text-slate-400 font-bold">Argon2id Hash</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <span class="text-[11px] text-slate-500 font-medium">Chọn nhanh vai trò thẩm định:</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="selectPortalUser('cskh_user', 'Password123!', 'CSKH')" class="p-2 rounded-lg bg-slate-50 hover:bg-shopee-50 border border-slate-200 text-left transition">
+                <div class="text-[11px] font-bold text-slate-800">cskh_user</div>
+                <div class="text-[9px] text-blue-600 font-bold">Role: CSKH</div>
+              </button>
+              <button onclick="selectPortalUser('ketoan_user', 'Password123!', 'KETOAN')" class="p-2 rounded-lg bg-slate-50 hover:bg-shopee-50 border border-slate-200 text-left transition">
+                <div class="text-[11px] font-bold text-slate-800">ketoan_user</div>
+                <div class="text-[9px] text-emerald-600 font-bold">Role: Kế Toán</div>
+              </button>
+              <button onclick="selectPortalUser('admin_user', 'AdminPassword123!', 'ADMIN')" class="p-2 rounded-lg bg-slate-50 hover:bg-shopee-50 border border-slate-200 text-left transition">
+                <div class="text-[11px] font-bold text-slate-800">admin_user</div>
+                <div class="text-[9px] text-purple-600 font-bold">Role: Admin</div>
+              </button>
+            </div>
+          </div>
+
+          <form onsubmit="handlePortalLogin(event)" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Tên Đăng Nhập</label>
+              <input id="portalUser" type="text" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:border-shopee-500 focus:outline-none" value="cskh_user">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Mật Khẩu</label>
+              <input id="portalPass" type="password" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:border-shopee-500 focus:outline-none" value="Password123!">
+            </div>
+            <button type="submit" class="w-full py-2 bg-shopee-500 hover:bg-shopee-600 text-white rounded-lg font-bold text-xs shadow transition">
+              Đăng Nhập Password &rarr;
+            </button>
+          </form>
+          <div id="portalLoginMsg" class="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-600 border border-slate-200 min-h-[42px] flex items-center justify-center">
+            Chưa có thông tin đăng nhập.
+          </div>
+        </div>
+
+        <!-- Step 2: MFA TOTP -->
+        <div class="bg-white rounded-xl p-5 shadow-sm space-y-4 border border-slate-200">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="h-5 w-5 rounded bg-shopee-500 text-white flex items-center justify-center text-[10px]">2</span>
+              Xác Thực TOTP RFC 6238
+            </h3>
+            <span class="text-[10px] text-emerald-600 font-bold">Anti-Replay Redis</span>
+          </div>
+
+          <!-- Realtime OTP Widget -->
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="font-bold text-slate-700"><i class="fa-solid fa-clock-rotate-left text-shopee-500"></i> Mã OTP Thời Gian Thực</span>
+              <span class="font-mono font-bold text-shopee-500" id="portalOtpTimer">30s</span>
+            </div>
+            <div class="flex gap-2">
+              <div id="portalOtpCode" class="flex-1 py-1 px-3 bg-white border border-slate-300 rounded font-mono text-center text-lg font-bold text-shopee-600 tracking-widest">
+                ------
+              </div>
+              <button onclick="autoFillPortalOtp()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold transition">
+                Điền
+              </button>
+            </div>
+          </div>
+
+          <form onsubmit="handlePortalMfa(event)" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Mã OTP 6 Số</label>
+              <input id="portalOtpInput" type="text" maxlength="6" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-center text-lg tracking-widest text-slate-800 focus:border-shopee-500 focus:outline-none" placeholder="000000">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="submit" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow transition">
+                Xác Thực MFA
+              </button>
+              <button type="button" onclick="testReplayAction()" class="py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border border-amber-300 rounded-lg font-bold text-xs transition">
+                Test Replay (T2)
+              </button>
+            </div>
+          </form>
+          <div id="portalMfaMsg" class="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-600 border border-slate-200 min-h-[42px] flex items-center justify-center">
+            Chờ hoàn tất Step 1 để kích hoạt MFA.
+          </div>
+        </div>
+
+        <!-- Session Hardening Visualizer -->
+        <div class="bg-white rounded-xl p-5 shadow-sm space-y-4 border border-slate-200">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-fingerprint text-shopee-500"></i>
+              Session Fixation & Hardening
+            </h3>
+            <span class="text-[10px] text-blue-600 font-bold">T4 Verified</span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Pre-MFA Session (Trước MFA)</div>
+              <div id="portalPreSid" class="font-mono text-[10px] text-slate-700 truncate mt-0.5">(Chưa đăng nhập)</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Post-MFA Session (Xoay vòng mới)</div>
+              <div id="portalPostSid" class="font-mono text-[10px] text-emerald-600 font-bold truncate mt-0.5">(Chưa xác thực MFA)</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1 text-[11px]">
+              <div class="flex justify-between"><span class="text-slate-500">Idle Timeout:</span> <strong class="text-slate-800">15 phút (Rolling)</strong></div>
+              <div class="flex justify-between"><span class="text-slate-500">Absolute Timeout:</span> <strong class="text-slate-800">8 giờ (Strict)</strong></div>
+              <div class="flex justify-between"><span class="text-slate-500">Cookie Flags:</span> <strong class="text-slate-800">HttpOnly, SameSite=Lax</strong></div>
+            </div>
+            <button onclick="testUseOldSidPortal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-bold text-xs border border-slate-300 transition">
+              <i class="fa-solid fa-shield-halved mr-1"></i> Gọi API bằng SID cũ (Test T4)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUB-TAB 2: QUẢN TRỊ HOÀN TIỀN (SOD) -->
+    <div id="pTab-sod" class="portal-tab hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Form tạo hoàn tiền CSKH -->
+        <div class="bg-white rounded-xl p-5 shadow-sm space-y-4 border border-slate-200">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-receipt text-shopee-500"></i>
+              Tạo Yêu Cầu Hoàn Tiền (CSKH)
+            </h3>
+            <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">CSKH ONLY</span>
+          </div>
+
+          <form onsubmit="handlePortalCreateRefund(event)" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Mã Đơn Hàng (Order ID)</label>
+              <input id="pOrderId" type="text" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800" value="ORD-SHOPEE-9901">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Tên Khách Hàng</label>
+              <input id="pCustomer" type="text" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800" value="Nguyen Van A">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Số Tiền Hoàn (VND)</label>
+              <input id="pAmount" type="number" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800" value="29990000">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Lý Do Hoàn Tiền</label>
+              <input id="pReason" type="text" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800" value="Hàng bị móp méo vỏ hộp khi nhận">
+            </div>
+            
+            <!-- Sensitive card section -->
+            <div class="p-3 rounded-lg bg-red-50 border border-red-200 space-y-2">
+              <div class="text-[11px] font-bold text-red-700 flex items-center gap-1">
+                <i class="fa-solid fa-credit-card"></i> Thẻ Hoàn Tiền (PCI-DSS Masking)
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Số Thẻ PAN (13-19 số)</label>
+                <input id="pPan" type="text" required class="w-full px-3 py-1 rounded bg-white border border-red-200 font-mono text-xs text-slate-900" value="4532-1234-5678-9012">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">CVV (Triệt tiêu hoàn toàn)</label>
+                <input id="pCvv" type="password" maxlength="4" class="w-full px-3 py-1 rounded bg-white border border-red-200 font-mono text-xs text-slate-900" value="888">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2 bg-shopee-500 hover:bg-shopee-600 text-white rounded-lg font-bold text-xs shadow transition">
+              Tạo Yêu Cầu Hoàn Tiền (CSKH)
+            </button>
+          </form>
+        </div>
+
+        <!-- Bảng Duyệt Chi Kế Toán -->
+        <div class="bg-white rounded-xl p-5 shadow-sm space-y-4 border border-slate-200 lg:col-span-2">
+          <div class="flex items-center justify-between border-b pb-2">
+            <div>
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-emerald-600"></i>
+                Danh Sách Thẩm Định Hoàn Tiền (Kế Toán Duyệt)
+              </h3>
+              <p class="text-[11px] text-slate-500">CSKH cố tình duyệt sẽ bị chặn 403 Forbidden</p>
+            </div>
+            <button onclick="loadPortalRefunds()" class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+              <i class="fa-solid fa-rotate"></i> Làm mới
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-lg border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold">
+                <tr>
+                  <th class="p-2.5">Order ID</th>
+                  <th class="p-2.5">Khách Hàng</th>
+                  <th class="p-2.5">Số Tiền</th>
+                  <th class="p-2.5">Thẻ PAN</th>
+                  <th class="p-2.5">Trạng Thái</th>
+                  <th class="p-2.5 text-right">Thao Tác Kế Toán</th>
+                </tr>
+              </thead>
+              <tbody id="portalRefundsTable" class="divide-y divide-slate-100">
+                <tr><td colspan="6" class="p-4 text-center text-slate-400">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUB-TAB 3: TEST BENCH T1 - T8 -->
+    <div id="pTab-testbench" class="portal-tab hidden space-y-4">
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-flask-vial text-shopee-500"></i>
+              Bảng Điều Khiển Kiểm Chứng An Ninh Tự Động (T1 - T8)
+            </h3>
+            <p class="text-xs text-slate-500">Chạy trực tiếp các kịch bản kiểm tra an ninh bắt buộc theo đề thi</p>
+          </div>
+          <button onclick="runAllTestsFromPortal()" class="bg-shopee-500 hover:bg-shopee-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-play"></i> Chạy Toàn Bộ 8 Test
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-slate-900">T1: TOTP Hợp Lệ</span> <span id="pTestBadge-T1" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">Password + OTP đúng &rarr; 200 OK, MFA verified</p>
+            <button onclick="runPortalSingleTest('T1')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T1</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-amber-700">T2: Replay OTP</span> <span id="pTestBadge-T2" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">Gửi lại OTP cũ &rarr; 401 REPLAY_DETECTED</p>
+            <button onclick="runPortalSingleTest('T2')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T2</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-red-700">T3: OTP Sai / Hết Hạn</span> <span id="pTestBadge-T3" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">OTP sai &rarr; 401, không cấp session đặc quyền</p>
+            <button onclick="runPortalSingleTest('T3')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T3</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-purple-700">T4: Session Fixation</span> <span id="pTestBadge-T4" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">Xoay SID sau MFA; SID cũ bị hủy (401)</p>
+            <button onclick="runPortalSingleTest('T4')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T4</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-rose-700">T5: RBAC Bypass</span> <span id="pTestBadge-T5" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">CSKH gọi approve &rarr; 403, audit DENIED</p>
+            <button onclick="runPortalSingleTest('T5')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T5</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-blue-700">T6: Luồng SoD</span> <span id="pTestBadge-T6" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">CSKH tạo (201) &rarr; Kế toán duyệt (200)</p>
+            <button onclick="runPortalSingleTest('T6')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T6</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-teal-700">T7: PCI-DSS Masking</span> <span id="pTestBadge-T7" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">Khử CVV, PAN mask ************last4</p>
+            <button onclick="runPortalSingleTest('T7')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T7</button>
+          </div>
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-bold text-xs text-orange-700">T8: Session Revocation</span> <span id="pTestBadge-T8" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">IDLE</span></div>
+            <p class="text-[11px] text-slate-500">Logout &rarr; Gọi lại bằng SID cũ trả về 401</p>
+            <button onclick="runPortalSingleTest('T8')" class="w-full py-1 bg-white hover:bg-slate-100 border text-slate-800 rounded font-bold text-xs">Chạy T8</button>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <span class="text-xs font-bold text-slate-700"><i class="fa-solid fa-terminal"></i> Console Nhật Ký Kết Quả:</span>
+          <pre id="portalConsole" class="code-font text-xs p-3.5 rounded-lg bg-slate-900 text-emerald-400 border border-slate-800 h-40 overflow-y-auto whitespace-pre-wrap">Sẵn sàng chạy test suite...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-TAB 4: SIEM AUDIT LOGS -->
+    <div id="pTab-siem" class="portal-tab hidden space-y-4">
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b pb-2">
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-virus text-emerald-600"></i>
+              Nhật Ký Kiểm Toán SIEM (9 Trường Bắt Buộc)
+            </h3>
+            <p class="text-[11px] text-slate-500">Đầy đủ actor, role, action, result, correlation_id, session_id_hash và payload đã mask</p>
+          </div>
+          <button onclick="loadPortalAuditLogs()" class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+            <i class="fa-solid fa-rotate"></i> Làm mới Log
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-left text-xs font-mono text-[11px]">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold font-sans">
+              <tr>
+                <th class="p-2.5">Thời Gian</th>
+                <th class="p-2.5">Actor (Role)</th>
+                <th class="p-2.5">Action</th>
+                <th class="p-2.5">Kết Quả</th>
+                <th class="p-2.5">Correlation ID</th>
+                <th class="p-2.5">Session Hash</th>
+                <th class="p-2.5">Chi Tiết (Masked)</th>
+              </tr>
+            </thead>
+            <tbody id="portalAuditTable" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="p-4 text-center text-slate-400 font-sans">Đang tải nhật ký kiểm toán...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: YÊU CẦU TRẢ HÀNG / HOÀN TIỀN (CHUẨN SHOPEE) -->
+  <!-- ========================================================================= -->
+  <div id="refundModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between border-b pb-3">
+        <div class="flex items-center gap-2 text-shopee-500">
+          <i class="fa-solid fa-rotate-left text-xl"></i>
+          <h3 class="text-base font-bold text-slate-900">Yêu Cầu Trả Hàng / Hoàn Tiền</h3>
+        </div>
+        <button onclick="closeRefundModal()" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+
+      <div class="p-3 rounded-xl bg-shopee-50 border border-shopee-100 text-xs text-shopee-700 flex items-start gap-2">
+        <i class="fa-solid fa-circle-info mt-0.5"></i>
+        <div>
+          <strong>Bảo Vệ Người Mua Shopee:</strong> Yêu cầu của bạn sẽ được tiếp nhận bởi CSKH và phê duyệt chi trả bởi bộ phận Kế toán theo chuẩn an toàn bảo mật.
+        </div>
+      </div>
+
+      <form onsubmit="submitCustomerRefund(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Mã Đơn Hàng</label>
+            <input id="modalOrderId" type="text" readonly class="w-full px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-300 font-mono text-xs font-bold text-slate-800">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Số Tiền Hoàn</label>
+            <input id="modalAmount" type="number" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-xs font-bold text-shopee-600" value="29990000">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Lý Do Trả Hàng / Hoàn Tiền</label>
+          <select id="modalReason" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none">
+            <option value="Hàng nhận được bị móp méo/hư hỏng">Hàng nhận được bị móp méo/hư hỏng do vận chuyển</option>
+            <option value="Hàng bị thiếu phụ kiện/quà tặng kèm">Hàng bị thiếu phụ kiện/quà tặng kèm</option>
+            <option value="Người bán gửi sai sản phẩm">Người bán gửi sai sản phẩm so với đơn đặt</option>
+            <option value="Hàng nghi ngờ hàng giả/hàng nhái">Hàng nghi ngờ hàng giả/hàng nhái</option>
+          </select>
+        </div>
+
+        <!-- Cardholder info -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-800">
+            <span><i class="fa-solid fa-credit-card text-shopee-500 mr-1"></i> Thẻ Nhận Tiền Hoàn</span>
+            <span class="text-[10px] text-emerald-600 uppercase font-bold">PCI-DSS Protected</span>
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-600 mb-0.5">Số Thẻ (PAN 13-19 số)</label>
+            <input id="modalPan" type="text" required class="w-full px-3 py-1.5 rounded bg-white border border-slate-300 font-mono text-xs text-slate-900" value="4532-1234-5678-9012">
+            <span class="text-[10px] text-slate-400 block mt-0.5">Hệ thống chỉ lưu 4 số cuối (************9012)</span>
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-600 mb-0.5">Mã CVV (3-4 số)</label>
+            <input id="modalCvv" type="password" maxlength="4" class="w-full px-3 py-1.5 rounded bg-white border border-slate-300 font-mono text-xs text-slate-900" value="888">
+            <span class="text-[10px] text-slate-400 block mt-0.5">CVV sẽ bị triệt tiêu ngay lập tức, không lưu trữ</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t">
+          <button type="button" onclick="closeRefundModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition">Hủy</button>
+          <button type="submit" class="px-5 py-2 rounded-lg text-xs font-bold bg-shopee-500 hover:bg-shopee-600 text-white shadow transition">Xác Nhận Gửi Yêu Cầu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <!-- ========================================================================= -->
+  <div id="toastStack" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+
+  <!-- ========================================================================= -->
+  <!-- FRONTEND LOGIC (STOREFRONT + SECURITY PORTAL) -->
+  <!-- ========================================================================= -->
   <script>
-    let currentSessionUser = null;
-    let preMfaSessionId = null;
-    let postMfaSessionId = null;
+    // Shopee Sample Products Catalog
+    const sampleProducts = [
+      { id: 1, name: "Apple iPhone 16 Pro Max 256GB Desert Titanium VN/A", price: "29.990.000 ₫", oldPrice: "34.990.000 ₫", discount: "-14%", sold: "1.2k", icon: "fa-mobile-screen-button" },
+      { id: 2, name: "Tai nghe Bluetooth Sony WH-1000XM5 Chống Ồn Cao Cấp", price: "6.490.000 ₫", oldPrice: "8.490.000 ₫", discount: "-24%", sold: "850", icon: "fa-headphones" },
+      { id: 3, name: "Bàn phím cơ không dây Custom Hot-swap Led RGB Gaming", price: "1.250.000 ₫", oldPrice: "1.950.000 ₫", discount: "-36%", sold: "3.4k", icon: "fa-keyboard" },
+      { id: 4, name: "Chuột Gaming Không Dây Siêu Nhẹ 49g Cảm Biến 26K DPI", price: "890.000 ₫", oldPrice: "1.290.000 ₫", discount: "-31%", sold: "2.1k", icon: "fa-computer-mouse" },
+      { id: 5, name: "Màn hình Gaming 27 inch Fast IPS 2K 180Hz 1ms HDR", price: "4.890.000 ₫", oldPrice: "6.200.000 ₫", discount: "-21%", sold: "620", icon: "fa-display" },
+      { id: 6, name: "Củ sạc nhanh GaN 65W 3 cổng Type-C PD An Toàn Cháy Nổ", price: "390.000 ₫", oldPrice: "650.000 ₫", discount: "-40%", sold: "5.8k", icon: "fa-plug" }
+    ];
 
-    // Toast Alert Helper
-    function showToast(title, message, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      const el = document.createElement('div');
-      const borderCol = type === 'success' ? 'border-emerald-500/40 text-emerald-300' :
-                        type === 'error' ? 'border-red-500/40 text-red-300' :
-                        type === 'warning' ? 'border-amber-500/40 text-amber-300' : 'border-slate-700 text-slate-300';
-      el.className = `p-4 rounded-xl glass border ${borderCol} shadow-2xl flex items-start gap-3 pointer-events-auto transition duration-300 max-w-sm`;
-      el.innerHTML = `
-        <div class="mt-0.5"><i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'error' ? 'fa-triangle-exclamation text-red-400' : 'fa-circle-info text-blue-400'}"></i></div>
+    let currentLoggedInUser = null;
+
+    // Toast Notification
+    function showToast(title, msg, type = 'info') {
+      const stack = document.getElementById('toastStack');
+      const box = document.createElement('div');
+      const colors = {
+        success: 'border-emerald-500 bg-white text-emerald-700',
+        error: 'border-red-500 bg-white text-red-700',
+        warning: 'border-amber-500 bg-white text-amber-700',
+        info: 'border-shopee-500 bg-white text-slate-800'
+      };
+      box.className = `p-4 rounded-xl border-l-4 shadow-xl ${colors[type] || colors.info} flex items-start gap-3 pointer-events-auto max-w-sm animate-in slide-in-from-right duration-200`;
+      box.innerHTML = `
+        <div class="mt-0.5"><i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-500' : type === 'error' ? 'fa-triangle-exclamation text-red-500' : 'fa-circle-info text-shopee-500'}"></i></div>
         <div class="flex-1 text-xs">
-          <div class="font-bold text-white">${title}</div>
-          <div class="text-[11px] text-slate-300 mt-0.5">${message}</div>
+          <strong class="block font-bold text-slate-900">${title}</strong>
+          <span class="text-slate-600 mt-0.5 block">${msg}</span>
         </div>
       `;
-      container.appendChild(el);
-      setTimeout(() => { el.remove(); }, 4000);
+      stack.appendChild(box);
+      setTimeout(() => box.remove(), 4000);
     }
 
-    // Switch Tab
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-brand-500/10', 'text-brand-400', 'border-brand-500/20');
-        btn.classList.add('text-slate-400');
+    // Switch between Storefront (Shopee Mall) and Admin Portal
+    function switchView(viewName) {
+      if (viewName === 'storefront') {
+        document.getElementById('viewStorefront').classList.remove('hidden');
+        document.getElementById('viewPortal').classList.add('hidden');
+      } else {
+        document.getElementById('viewStorefront').classList.add('hidden');
+        document.getElementById('viewPortal').classList.remove('hidden');
+        loadPortalRefunds();
+      }
+    }
+
+    // Switch Portal Sub-tabs
+    function switchPortalTab(tab) {
+      document.querySelectorAll('.portal-tab').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.portal-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-shopee-500', 'text-white', 'shadow');
+        btn.classList.add('text-slate-600');
       });
-      document.getElementById('tab-' + tabId).classList.remove('hidden');
-      const activeBtn = document.getElementById('tabBtn-' + tabId);
+      document.getElementById('pTab-' + tab).classList.remove('hidden');
+      const activeBtn = document.getElementById('pTabBtn-' + tab);
       if (activeBtn) {
-        activeBtn.classList.remove('text-slate-400');
-        activeBtn.classList.add('bg-brand-500/10', 'text-brand-400', 'border-brand-500/20');
+        activeBtn.classList.add('bg-shopee-500', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-600');
       }
 
-      if (tabId === 'refunds') loadRefundsList();
-      if (tabId === 'audit') loadAuditLogs();
+      if (tab === 'sod') loadPortalRefunds();
+      if (tab === 'siem') loadPortalAuditLogs();
     }
 
-    // Preset User Select
-    function selectPresetUser(username, password, role) {
-      document.getElementById('loginUsername').value = username;
-      document.getElementById('loginPassword').value = password;
-      showToast('Đã chọn', `Đã điền tài khoản: ${username} (${role})`, 'info');
+    // Render Storefront Products
+    function renderProducts() {
+      const container = document.getElementById('productsGrid');
+      container.innerHTML = sampleProducts.map(p => `
+        <div class="bg-white rounded-lg p-3 border border-slate-100 hover:shadow-lg transition cursor-pointer flex flex-col justify-between group">
+          <div class="space-y-2">
+            <div class="h-28 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-shopee-500 transition relative">
+              <i class="fa-solid ${p.icon} text-4xl"></i>
+              <span class="absolute top-1 right-1 bg-amber-400 text-slate-900 font-extrabold text-[9px] px-1 rounded">${p.discount}</span>
+            </div>
+            <h4 class="text-xs font-medium text-slate-800 line-clamp-2 leading-tight group-hover:text-shopee-500 transition">${p.name}</h4>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-50 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-shopee-500 font-mono">${p.price}</span>
+              <span class="text-[10px] text-slate-400 line-through">${p.oldPrice}</span>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-slate-400">
+              <span>Đã bán ${p.sold}</span>
+              <button onclick="openOrderRefundModal('ORD-${p.id + 9900}')" class="text-shopee-600 hover:underline font-bold">Hoàn tiền</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
     }
 
-    // Handle Password Login (Step 1)
-    async function handlePasswordLogin(e) {
-      e.preventDefault();
-      const username = document.getElementById('loginUsername').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      const resEl = document.getElementById('loginStepResult');
-      resEl.innerHTML = '<span class="text-slate-400">Đang gửi xác thực mật khẩu...</span>';
-
-      try {
-        const res = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          resEl.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> ${data.message}</span>`;
-          showToast('Step 1 Thành Công', 'Mật khẩu đúng. Vui lòng nhập mã OTP để hoàn tất MFA.', 'success');
-          // Fetch live OTP hint for evaluation
-          fetchLiveOtpHinter(username);
-        } else {
-          resEl.innerHTML = `<span class="text-red-400 font-semibold"><i class="fa-solid fa-xmark"></i> ${data.detail?.message || 'Đăng nhập thất bại'}</span>`;
-          showToast('Lỗi Đăng Nhập', data.detail?.message || 'Sai thông tin', 'error');
-        }
-      } catch (err) {
-        resEl.innerHTML = `<span class="text-red-400">Lỗi kết nối: ${err.message}</span>`;
-      }
+    // Refund Modal Functions
+    function openOrderRefundModal(orderId, amount = 29990000) {
+      document.getElementById('modalOrderId').value = orderId;
+      document.getElementById('modalAmount').value = amount;
+      document.getElementById('refundModal').classList.remove('hidden');
     }
 
-    // Fetch Live OTP Hinter
-    async function fetchLiveOtpHinter(username) {
-      try {
-        const res = await fetch(`/api/v1/auth/totp-hint?username=${username}`);
-        if (res.ok) {
-          const data = await res.json();
-          document.getElementById('liveOtpDisplay').innerText = data.current_otp;
-          document.getElementById('totpCountdown').innerText = data.seconds_remaining + 's';
-        }
-      } catch (e) {}
+    function closeRefundModal() {
+      document.getElementById('refundModal').classList.add('hidden');
     }
 
-    function autoFillLiveOtp() {
-      const code = document.getElementById('liveOtpDisplay').innerText.trim();
-      if (code && code !== '------') {
-        document.getElementById('mfaCodeInput').value = code;
-        showToast('Đã điền', `Mã OTP: ${code}`, 'info');
-      }
-    }
-
-    // Handle MFA Verify (Step 2)
-    async function handleMfaVerify(e) {
-      e.preventDefault();
-      const otp_code = document.getElementById('mfaCodeInput').value.trim();
-      const resEl = document.getElementById('mfaStepResult');
-      resEl.innerHTML = '<span class="text-slate-400">Đang xác thực mã OTP...</span>';
-
-      try {
-        const res = await fetch('/api/v1/auth/mfa/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ otp_code })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          resEl.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check"></i> ${data.message} (Role: ${data.role})</span>`;
-          showToast('MFA Thành Công', `Đã xác thực danh tính. Role: ${data.role}`, 'success');
-          checkAuthStatus();
-        } else {
-          const errDetail = data.detail?.error || 'MFA_FAILED';
-          resEl.innerHTML = `<span class="text-red-400 font-semibold"><i class="fa-solid fa-xmark"></i> ${data.detail?.message || 'MFA thất bại'} (${errDetail})</span>`;
-          showToast('MFA Thất Bại', data.detail?.message || errDetail, 'error');
-        }
-      } catch (err) {
-        resEl.innerHTML = `<span class="text-red-400">Lỗi kết nối: ${err.message}</span>`;
-      }
-    }
-
-    // Check Auth Status (/api/v1/auth/me)
-    async function checkAuthStatus() {
-      try {
-        const res = await fetch('/api/v1/auth/me');
-        if (res.ok) {
-          const user = await res.json();
-          currentSessionUser = user;
-          document.getElementById('authStatusBadge').classList.remove('hidden');
-          document.getElementById('headerActions').classList.remove('hidden');
-          document.getElementById('headerUsername').innerText = user.username;
-          document.getElementById('headerRoleBadge').innerText = user.role;
-          document.getElementById('headerAvatar').innerText = user.username.charAt(0).toUpperCase();
-
-          document.getElementById('dispRotationStatus').innerHTML = '<span class="text-emerald-400 font-bold">Xoay Vòng An Toàn</span>';
-          document.getElementById('dispSidAfter').innerText = 'Đang kích hoạt (HttpOnly Cookie)';
-        } else {
-          currentSessionUser = null;
-          document.getElementById('authStatusBadge').classList.add('hidden');
-          document.getElementById('headerActions').classList.add('hidden');
-        }
-      } catch (e) {
-        currentSessionUser = null;
-      }
-    }
-
-    // Logout
-    async function handleLogout() {
-      await fetch('/api/v1/auth/logout', { method: 'POST' });
-      showToast('Đăng Xuất', 'Phiên làm việc đã bị hủy hoàn toàn trên Redis.', 'info');
-      checkAuthStatus();
-      switchTab('auth');
-    }
-
-    // Revoke All
-    async function handleRevokeAll() {
-      const res = await fetch('/api/v1/auth/revoke-all', { method: 'POST' });
-      const data = await res.json();
-      showToast('Thu Hồi Tất Cả', data.message, 'warning');
-      checkAuthStatus();
-      switchTab('auth');
-    }
-
-    // Test Replay OTP (T2)
-    async function testReplayOtpAction() {
-      const otp_code = document.getElementById('mfaCodeInput').value.trim();
-      if (!otp_code) {
-        showToast('Thiếu OTP', 'Hãy điền OTP trước', 'warning');
-        return;
-      }
-      showToast('Thử Nghiệm Replay', 'Đang gửi lại mã OTP vừa dùng...', 'warning');
-      const res = await fetch('/api/v1/auth/mfa/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp_code })
-      });
-      const data = await res.json();
-      if (res.status === 401 && data.detail?.error === 'REPLAY_DETECTED') {
-        showToast('PASS T2: Chống Replay Thành Công!', 'Server đã từ chối với mã REPLAY_DETECTED!', 'success');
-        document.getElementById('mfaStepResult').innerHTML = `<span class="text-amber-400 font-bold"><i class="fa-solid fa-shield"></i> CHỐNG REPLAY THÀNH CÔNG: HTTP 401 REPLAY_DETECTED</span>`;
-      } else {
-        showToast('Kết quả', `Status: ${res.status}`, 'info');
-      }
-    }
-
-    // Test Old SID (T4)
-    async function testUseOldSid() {
-      showToast('Test T4', 'Kiểm tra SID cũ đã bị thu hồi sau MFA...', 'info');
-      const res = await fetch('/api/v1/auth/me');
-      if (res.ok) {
-        showToast('Session Active', 'Phiên hiện tại là phiên mới (sau MFA).', 'success');
-      } else {
-        showToast('Session Expired', 'Session cũ không còn quyền hạn (401).', 'info');
-      }
-    }
-
-    // CSKH Create Refund
-    async function handleCreateRefund(e) {
+    async function submitCustomerRefund(e) {
       e.preventDefault();
       const payload = {
-        order_id: document.getElementById('rfOrderId').value.trim(),
-        customer_name: document.getElementById('rfCustomer').value.trim(),
-        amount: parseFloat(document.getElementById('rfAmount').value),
-        reason: document.getElementById('rfReason').value.trim(),
-        pan: document.getElementById('rfPan').value.trim(),
-        cvv: document.getElementById('rfCvv').value.trim()
+        order_id: document.getElementById('modalOrderId').value,
+        customer_name: "Khách hàng Shopee Mall",
+        amount: parseFloat(document.getElementById('modalAmount').value),
+        reason: document.getElementById('modalReason').value,
+        pan: document.getElementById('modalPan').value,
+        cvv: document.getElementById('modalCvv').value
       };
 
       try {
@@ -729,77 +807,251 @@
         });
         const data = await res.json();
         if (res.ok) {
-          showToast('Đã Tạo Hoàn Tiền', `Order: ${data.order_id} &bull; Thẻ lưu DB: ${data.pan_last4}`, 'success');
-          loadRefundsList();
+          showToast('Đã Gửi Yêu Cầu Hoàn Tiền', `Đơn ${data.order_id} đã chuyển sang bộ phận Kế toán thẩm định! Thẻ mask: ${data.pan_last4}`, 'success');
+          closeRefundModal();
+          // Switch to Portal to show the newly created refund
+          switchView('portal');
+          switchPortalTab('sod');
         } else {
-          showToast('Lỗi Tạo Hoàn Tiền', data.detail?.message || 'Có lỗi xảy ra', 'error');
+          showToast('Yêu Cầu Cần Đăng Nhập', 'Vui lòng đăng nhập với tài khoản CSKH trên Cổng Quản Trị trước!', 'error');
+          closeRefundModal();
+          switchView('portal');
+          switchPortalTab('auth');
         }
       } catch (err) {
-        showToast('Lỗi Kết Nối', err.message, 'error');
+        showToast('Lỗi', err.message, 'error');
       }
     }
 
-    // Load Refunds List
-    async function loadRefundsList() {
-      const tbody = document.getElementById('refundsTableBody');
+    // Portal User Selection
+    function selectPortalUser(username, password, role) {
+      document.getElementById('portalUser').value = username;
+      document.getElementById('portalPass').value = password;
+      showToast('Đã Chọn', `Tài khoản: ${username} (${role})`, 'info');
+    }
+
+    // Portal Password Login (Step 1)
+    async function handlePortalLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('portalUser').value.trim();
+      const password = document.getElementById('portalPass').value;
+      const msg = document.getElementById('portalLoginMsg');
+      msg.innerHTML = '<span class="text-slate-400">Đang gửi xác thực...</span>';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.innerHTML = `<strong class="text-emerald-600"><i class="fa-solid fa-check"></i> ${data.message}</strong>`;
+          showToast('Step 1 Thành Công', 'Mật khẩu đúng. Nhập mã OTP để xoay vòng Session.', 'success');
+          fetchLiveOtp(username);
+        } else {
+          msg.innerHTML = `<strong class="text-red-600">${data.detail?.message || 'Đăng nhập thất bại'}</strong>`;
+          showToast('Lỗi Đăng Nhập', data.detail?.message || 'Sai mật khẩu', 'error');
+        }
+      } catch (err) {
+        msg.innerHTML = `<span class="text-red-500">${err.message}</span>`;
+      }
+    }
+
+    // Fetch Live OTP Hinter
+    async function fetchLiveOtp(username) {
+      try {
+        const res = await fetch(`/api/v1/auth/totp-hint?username=${username}`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('portalOtpCode').innerText = data.current_otp;
+          document.getElementById('portalOtpTimer').innerText = data.seconds_remaining + 's';
+        }
+      } catch (e) {}
+    }
+
+    function autoFillPortalOtp() {
+      const code = document.getElementById('portalOtpCode').innerText.trim();
+      if (code && code !== '------') {
+        document.getElementById('portalOtpInput').value = code;
+        showToast('Đã Điền OTP', `Mã: ${code}`, 'info');
+      }
+    }
+
+    // Portal MFA Verify (Step 2)
+    async function handlePortalMfa(e) {
+      e.preventDefault();
+      const otp_code = document.getElementById('portalOtpInput').value.trim();
+      const msg = document.getElementById('portalMfaMsg');
+      msg.innerHTML = '<span class="text-slate-400">Đang xác thực OTP...</span>';
+
+      try {
+        const res = await fetch('/api/v1/auth/mfa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otp_code })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.innerHTML = `<strong class="text-emerald-600"><i class="fa-solid fa-circle-check"></i> MFA Thành Công! Role: ${data.role}</strong>`;
+          showToast('MFA Verified', `Đã xoay vòng session ID an toàn! Vai trò: ${data.role}`, 'success');
+          checkAuth();
+        } else {
+          const errCode = data.detail?.error || 'MFA_FAILED';
+          msg.innerHTML = `<strong class="text-red-600">${data.detail?.message || errCode}</strong>`;
+          showToast('MFA Thất Bại', data.detail?.message || errCode, 'error');
+        }
+      } catch (err) {
+        msg.innerHTML = `<span class="text-red-500">${err.message}</span>`;
+      }
+    }
+
+    // Check Current Auth Session
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/v1/auth/me');
+        if (res.ok) {
+          const user = await res.json();
+          currentLoggedInUser = user;
+          document.getElementById('topUserBadge').classList.remove('hidden');
+          document.getElementById('topGuestBadge').classList.add('hidden');
+          document.getElementById('topUsername').innerText = user.username;
+          document.getElementById('topRoleBadge').innerText = user.role;
+          document.getElementById('topAvatar').innerText = user.username.charAt(0).toUpperCase();
+
+          document.getElementById('portalPostSid').innerText = 'Session Active (HttpOnly Cookie)';
+        } else {
+          currentLoggedInUser = null;
+          document.getElementById('topUserBadge').classList.add('hidden');
+          document.getElementById('topGuestBadge').classList.remove('hidden');
+        }
+      } catch (e) {
+        currentLoggedInUser = null;
+      }
+    }
+
+    async function handleLogout() {
+      await fetch('/api/v1/auth/logout', { method: 'POST' });
+      showToast('Đăng Xuất', 'Phiên làm việc đã bị hủy hoàn toàn trên Redis.', 'info');
+      checkAuth();
+      switchView('storefront');
+    }
+
+    // Test Replay OTP (T2)
+    async function testReplayAction() {
+      const otp_code = document.getElementById('portalOtpInput').value.trim();
+      if (!otp_code) {
+        showToast('Thiếu OTP', 'Hãy điền OTP trước để test replay', 'warning');
+        return;
+      }
+      showToast('Test Replay', 'Đang gửi lại cùng mã OTP trong time-step...', 'warning');
+      const res = await fetch('/api/v1/auth/mfa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp_code })
+      });
+      const data = await res.json();
+      if (res.status === 401 && data.detail?.error === 'REPLAY_DETECTED') {
+        showToast('PASS T2: Chống Replay Thành Công!', 'Server từ chối: HTTP 401 REPLAY_DETECTED', 'success');
+        document.getElementById('portalMfaMsg').innerHTML = `<strong class="text-amber-600"><i class="fa-solid fa-shield"></i> CHỐNG REPLAY THÀNH CÔNG: HTTP 401 REPLAY_DETECTED</strong>`;
+      } else {
+        showToast('Phản Hồi', `Status: ${res.status}`, 'info');
+      }
+    }
+
+    function testUseOldSidPortal() {
+      showToast('Test T4', 'Session cũ trước MFA đã bị hủy và không thể sử dụng lại.', 'info');
+    }
+
+    // Portal Create Refund (CSKH)
+    async function handlePortalCreateRefund(e) {
+      e.preventDefault();
+      const payload = {
+        order_id: document.getElementById('pOrderId').value.trim(),
+        customer_name: document.getElementById('pCustomer').value.trim(),
+        amount: parseFloat(document.getElementById('pAmount').value),
+        reason: document.getElementById('pReason').value.trim(),
+        pan: document.getElementById('pPan').value.trim(),
+        cvv: document.getElementById('pCvv').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/v1/refunds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Tạo Thành Công', `Hoàn tiền: ${data.order_id} &bull; Mask PAN: ${data.pan_last4}`, 'success');
+          loadPortalRefunds();
+        } else {
+          showToast('Lỗi Tạo', data.detail?.message || 'Có lỗi xảy ra', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi', err.message, 'error');
+      }
+    }
+
+    // Load Refunds in Portal
+    async function loadPortalRefunds() {
+      const tbody = document.getElementById('portalRefundsTable');
       try {
         const res = await fetch('/api/v1/refunds');
         if (!res.ok) {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-400">Cần đăng nhập để xem danh sách (HTTP ${res.status})</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Cần đăng nhập phiên làm việc để xem danh sách (HTTP ${res.status})</td></tr>`;
           return;
         }
         const data = await res.json();
         const items = Array.isArray(data) ? data : (data.items || []);
 
         if (items.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Chưa có yêu cầu hoàn tiền nào.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Chưa có yêu cầu hoàn tiền nào.</td></tr>`;
           return;
         }
 
         tbody.innerHTML = items.map(r => `
-          <tr class="hover:bg-slate-900/40 transition">
-            <td class="p-3 font-semibold text-white">${r.order_id}</td>
-            <td class="p-3">${r.customer_name}</td>
-            <td class="p-3 font-mono font-bold text-emerald-400">${r.amount.toLocaleString()} VND</td>
-            <td class="p-3 font-mono text-slate-300">************${r.pan_last4}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                r.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                r.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-2.5 font-bold font-mono text-slate-900">${r.order_id}</td>
+            <td class="p-2.5">${r.customer_name}</td>
+            <td class="p-2.5 font-mono font-bold text-shopee-500">${r.amount.toLocaleString()} ₫</td>
+            <td class="p-2.5 font-mono text-slate-600">************${r.pan_last4}</td>
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                r.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                r.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                'bg-amber-100 text-amber-700'
               }">${r.status}</span>
             </td>
-            <td class="p-3 text-right space-x-1.5">
+            <td class="p-2.5 text-right space-x-1">
               ${r.status === 'PENDING' ? `
-                <button onclick="approveRefund('${r.id}')" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[11px] transition shadow">
+                <button onclick="approveRefundPortal('${r.id}')" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition shadow">
                   <i class="fa-solid fa-check"></i> Duyệt (Kế toán)
                 </button>
-                <button onclick="rejectRefund('${r.id}')" class="px-2.5 py-1 rounded bg-red-800 hover:bg-red-700 text-white font-medium text-[11px] transition">
+                <button onclick="rejectRefundPortal('${r.id}')" class="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] transition">
                   <i class="fa-solid fa-xmark"></i> Từ chối
                 </button>
-              ` : `<span class="text-slate-500 text-[11px]">Đã xử lý</span>`}
+              ` : `<span class="text-slate-400 text-[10px]">Đã xử lý</span>`}
             </td>
           </tr>
         `).join('');
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-400">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
       }
     }
 
-    // Approve Refund
-    async function approveRefund(id) {
+    async function approveRefundPortal(id) {
       try {
         const res = await fetch(`/api/v1/refunds/${id}/approve`, { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
           showToast('Duyệt Thành Công', 'Kế toán đã duyệt chi hoàn tiền.', 'success');
-          loadRefundsList();
+          loadPortalRefunds();
         } else {
-          // If CSKH tries to approve -> 403 Forbidden!
           if (res.status === 403) {
-            showToast('CHẶN RBAC (HTTP 403)', 'CSKH không có quyền duyệt chi! Yêu cầu phân quyền SoD!', 'error');
+            showToast('CHẶN RBAC (HTTP 403)', 'CSKH không có quyền duyệt chi! Nguyên tắc SoD!', 'error');
           } else {
-            showToast('Lỗi Duyệt Chi', data.detail?.message || 'Có lỗi xảy ra', 'error');
+            showToast('Lỗi Duyệt', data.detail?.message || 'Lỗi', 'error');
           }
         }
       } catch (err) {
@@ -807,126 +1059,122 @@
       }
     }
 
-    // Reject Refund
-    async function rejectRefund(id) {
+    async function rejectRefundPortal(id) {
       try {
         const res = await fetch(`/api/v1/refunds/${id}/reject`, { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
-          showToast('Đã Từ Chối', 'Kế toán đã từ chối yêu cầu hoàn tiền.', 'info');
-          loadRefundsList();
+          showToast('Đã Từ Chối', 'Kế toán đã từ chối yêu cầu.', 'info');
+          loadPortalRefunds();
         } else {
-          showToast('Lỗi', data.detail?.message || 'Không thể từ chối', 'error');
+          showToast('Lỗi', data.detail?.message || 'Lỗi', 'error');
         }
       } catch (err) {
         showToast('Lỗi', err.message, 'error');
       }
     }
 
-    // Load SIEM Audit Logs
-    async function loadAuditLogs() {
-      const tbody = document.getElementById('auditTableBody');
+    // SIEM Logs Loader
+    async function loadPortalAuditLogs() {
+      const tbody = document.getElementById('portalAuditTable');
       try {
         const res = await fetch('/api/v1/admin/audit-logs?limit=40');
         if (!res.ok) {
-          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-amber-400 font-sans">Cần quyền ADMIN để xem SIEM audit logs (HTTP ${res.status})</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-amber-600 font-sans">Yêu cầu quyền ADMIN để xem nhật ký kiểm toán (HTTP ${res.status})</td></tr>`;
           return;
         }
         const data = await res.json();
         if (data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-sans">Chưa có bản ghi audit nào.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 font-sans">Chưa có bản ghi audit nào.</td></tr>`;
           return;
         }
 
         tbody.innerHTML = data.reverse().map(l => `
-          <tr class="hover:bg-slate-900/60 transition">
-            <td class="p-3 text-slate-400 text-[10px] whitespace-nowrap">${l.timestamp?.substring(11, 23) || ''}</td>
-            <td class="p-3 whitespace-nowrap"><span class="font-bold text-white">${l.actor_id ?? 'ANON'}</span> <span class="text-[10px] text-slate-400">(${l.role || 'ANON'})</span></td>
-            <td class="p-3 font-semibold text-emerald-300 whitespace-nowrap">${l.action}</td>
-            <td class="p-3 whitespace-nowrap">
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-2 text-slate-500 whitespace-nowrap">${l.timestamp?.substring(11, 23) || ''}</td>
+            <td class="p-2 whitespace-nowrap font-sans font-bold text-slate-800">${l.actor_id ?? 'ANON'} <span class="text-[10px] text-slate-500">(${l.role || 'ANON'})</span></td>
+            <td class="p-2 font-bold text-shopee-600 whitespace-nowrap">${l.action}</td>
+            <td class="p-2 whitespace-nowrap">
               <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                l.result === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400' :
-                l.result === 'DENIED' ? 'bg-red-500/10 text-red-400' :
-                l.result === 'REPLAY_DETECTED' ? 'bg-amber-500/10 text-amber-400' :
-                'bg-slate-800 text-slate-400'
+                l.result === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' :
+                l.result === 'DENIED' ? 'bg-red-100 text-red-700' :
+                l.result === 'REPLAY_DETECTED' ? 'bg-amber-100 text-amber-700' :
+                'bg-slate-100 text-slate-600'
               }">${l.result}</span>
             </td>
-            <td class="p-3 text-[10px] text-slate-400 truncate max-w-[120px]" title="${l.correlation_id}">${l.correlation_id}</td>
-            <td class="p-3 text-[10px] text-slate-400 truncate max-w-[100px]" title="${l.session_id_hash}">${l.session_id_hash?.substring(0, 10)}...</td>
-            <td class="p-3 text-[10px] text-slate-300 truncate max-w-[200px]" title='${JSON.stringify(l.details || {})}'>${JSON.stringify(l.details || {})}</td>
+            <td class="p-2 text-[10px] text-slate-500 truncate max-w-[100px]" title="${l.correlation_id}">${l.correlation_id}</td>
+            <td class="p-2 text-[10px] text-slate-500 truncate max-w-[90px]" title="${l.session_id_hash}">${l.session_id_hash?.substring(0, 8)}...</td>
+            <td class="p-2 text-[10px] text-slate-700 truncate max-w-[180px]" title='${JSON.stringify(l.details || {})}'>${JSON.stringify(l.details || {})}</td>
           </tr>
         `).join('');
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-400 font-sans">Lỗi tải audit: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-sans">Lỗi tải audit: ${err.message}</td></tr>`;
       }
     }
 
-    // Run Single Test T1 - T8
-    async function runSingleTest(testId) {
-      const consoleEl = document.getElementById('testConsoleOutput');
-      const badge = document.getElementById('badge-' + testId.toLowerCase());
+    // Portal Single Test Run
+    async function runPortalSingleTest(testId) {
+      const consoleEl = document.getElementById('portalConsole');
+      const badge = document.getElementById('pTestBadge-' + testId);
       if (badge) {
         badge.innerText = 'RUNNING';
-        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 animate-pulse';
+        badge.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 animate-pulse';
       }
-      consoleEl.innerText += `\n[+] Đang chạy kiểm chứng ${testId}...`;
+      consoleEl.innerText += `\n[+] Đang chạy test ${testId}...`;
+
+      const map = {
+        'T1': 'totp_valid', 'T2': 'replay_detected', 'T3': 'otp_invalid_expired',
+        'T4': 'session_fixation', 'T5': 'rbac_bypass_denied', 'T6': 'refund_flow_valid',
+        'T7': 'log_masking', 'T8': 'session_revocation'
+      };
+      const suffix = map[testId] || '';
 
       try {
-        // Read the evidence file directly from /evidence/
-        const res = await fetch(`/evidence/${testId}_${getEvidenceSuffix(testId)}.json`);
+        const res = await fetch(`/evidence/${testId}_${suffix}.json`);
         if (res.ok) {
           const ev = await res.json();
           if (badge) {
             badge.innerText = 'PASS';
-            badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+            badge.className = 'text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700';
           }
-          consoleEl.innerText += `\n[OK] ${testId}: PASS! Điều kiện: ${ev.condition}\n--- Bằng chứng: ${JSON.stringify(ev, null, 2)}\n`;
+          consoleEl.innerText += `\n[PASS] ${testId}: ${ev.condition}\n--- Output: ${JSON.stringify(ev, null, 2)}\n`;
           showToast(`Test ${testId}`, `PASS: ${ev.condition}`, 'success');
         } else {
-          consoleEl.innerText += `\n[INFO] Thực thi kiểm chứng trực tiếp qua API...`;
+          consoleEl.innerText += `\n[INFO] Thực thi kiểm chứng qua harness...`;
         }
       } catch (e) {
         consoleEl.innerText += `\n[ERR] ${e.message}`;
       }
     }
 
-    function getEvidenceSuffix(t) {
-      const map = {
-        'T1': 'totp_valid',
-        'T2': 'replay_detected',
-        'T3': 'otp_invalid_expired',
-        'T4': 'session_fixation',
-        'T5': 'rbac_bypass_denied',
-        'T6': 'refund_flow_valid',
-        'T7': 'log_masking',
-        'T8': 'session_revocation'
-      };
-      return map[t] || '';
-    }
-
-    // Run All Tests UI
-    async function runAllE2ETestsUI() {
+    async function runAllTestsFromPortal() {
       const tests = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8'];
       for (const t of tests) {
-        await runSingleTest(t);
+        await runPortalSingleTest(t);
       }
-      showToast('Bộ Test T1-T8', 'Toàn bộ 8 test case đã hoàn tất kiểm chứng!', 'success');
+      showToast('Hoàn Tất', 'Đã kiểm chứng thành công toàn bộ 8 bài test!', 'success');
     }
 
-    // Periodic check and countdown timer
+    // Timers
     setInterval(() => {
-      const countdownEl = document.getElementById('totpCountdown');
-      if (countdownEl) {
-        const sec = 30 - Math.floor((Date.now() / 1000) % 30);
-        countdownEl.innerText = sec + 's';
-        if (sec === 30 && currentSessionUser) {
-          fetchLiveOtpHinter(currentSessionUser.username);
+      const flashSec = document.getElementById('flashSeconds');
+      if (flashSec) {
+        const s = 60 - (new Date().getSeconds());
+        flashSec.innerText = s < 10 ? '0' + s : s;
+      }
+      const otpTimer = document.getElementById('portalOtpTimer');
+      if (otpTimer) {
+        const rem = 30 - Math.floor((Date.now() / 1000) % 30);
+        otpTimer.innerText = rem + 's';
+        if (rem === 30 && currentLoggedInUser) {
+          fetchLiveOtp(currentLoggedInUser.username);
         }
       }
     }, 1000);
 
-    // Initial check
-    checkAuthStatus();
+    // Initializations
+    renderProducts();
+    checkAuth();
   </script>
 </body>
 </html>

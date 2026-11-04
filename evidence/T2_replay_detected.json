@@ -3,7 +3,7 @@
   "name": "Replay OTP",
   "status": "PASS",
   "condition": "HTTP 401/403; event REPLAY_DETECTED; Redis key/TTL verified",
-  "replayed_otp": "344418",
+  "replayed_otp": "079114",
   "response_replay": {
     "status_code": 401,
     "body": {
@@ -14,23 +14,23 @@
     }
   },
   "redis_state": {
-    "key": "otp_replay:1:59793521",
+    "key": "otp_replay:1:59793540",
     "value": "consumed",
     "ttl_remaining_seconds": 90
   },
   "audit_record": {
-    "timestamp": "2026-11-04T15:20:54.504548Z",
+    "timestamp": "2026-11-04T15:30:18.588306Z",
     "actor_id": 1,
     "role": "CSKH",
     "action": "MFA_REPLAY_DETECTED",
     "object_id": "1",
     "result": "REPLAY_DETECTED",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t2-1793805654",
+    "correlation_id": "test-t2-1793806218",
     "session_id_hash": "PRE_MFA",
     "details": {
       "reason": "otp_replay_attempt",
-      "time_step": 59793521
+      "time_step": 59793540
     }
   }
 }

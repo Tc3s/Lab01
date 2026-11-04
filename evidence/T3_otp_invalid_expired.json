@@ -19,17 +19,17 @@
     "role": "KETOAN",
     "mfa_verified": false,
     "session_type": "pre_mfa",
-    "created_at": 1793805654.6104424
+    "created_at": 1793806218.650582
   },
   "audit_record": {
-    "timestamp": "2026-11-04T15:20:54.616962Z",
+    "timestamp": "2026-11-04T15:30:18.654238Z",
     "actor_id": 2,
     "role": "KETOAN",
     "action": "MFA_FAILED",
     "object_id": "2",
     "result": "FAILED",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t3-1793805654",
+    "correlation_id": "test-t3-1793806218",
     "session_id_hash": "PRE_MFA",
     "details": {
       "reason": "invalid_or_expired_otp"
