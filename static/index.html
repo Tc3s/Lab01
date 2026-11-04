@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopee Mall &bull; Sàn Thương Mại Điện Tử & Hệ Thống Quản Trị Bảo Mật</title>
+  <title>ECO Mall &bull; Sàn Thương Mại Điện Tử & Hệ Thống Quản Trị Bảo Mật</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script>
@@ -42,7 +42,7 @@
     <!-- Mini Utility Topbar -->
     <div class="max-w-7xl mx-auto px-4 py-1.5 flex flex-wrap items-center justify-between text-xs border-b border-white/20">
       <div class="flex items-center gap-3 text-white/90">
-        <span class="font-medium"><i class="fa-solid fa-store mr-1"></i> Sàn Shopee TMĐT An Toàn</span>
+        <span class="font-medium"><i class="fa-solid fa-store mr-1"></i> Sàn ECO TMĐT An Toàn</span>
         <span class="text-white/40">|</span>
         <span class="text-amber-200 font-semibold"><i class="fa-solid fa-shield-halved mr-1"></i> Midterm Lab 01: Secure Refund & Admin Portal</span>
         <span class="text-white/40">|</span>
@@ -87,7 +87,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-2xl font-black tracking-tight text-white">Shopee</span>
+            <span class="text-2xl font-black tracking-tight text-white">ECO</span>
             <span class="text-[10px] uppercase bg-white text-shopee-600 font-extrabold px-2 py-0.5 rounded-sm">Mall Bảo Mật</span>
           </div>
           <span class="text-[11px] text-white/85 block">Cổng Thương Mại & Xét Duyệt Hoàn Tiền Chuẩn PCI-DSS</span>
@@ -97,7 +97,7 @@
       <!-- Shopee Search Bar -->
       <div class="flex-1 max-w-2xl hidden md:block">
         <div class="bg-white rounded p-1 flex items-center shadow">
-          <input id="searchInput" type="text" placeholder="Shopee bao ship 0Đ - Mua sắm & hoàn tiền an toàn tuyệt đối..." class="flex-1 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none">
+          <input id="searchInput" type="text" placeholder="ECO bao ship 0Đ - Mua sắm & hoàn tiền an toàn tuyệt đối..." class="flex-1 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none">
           <button onclick="searchProductAction()" class="bg-shopee-500 hover:bg-shopee-600 text-white px-5 py-2 rounded text-xs font-bold transition flex items-center gap-1.5">
             <i class="fa-solid fa-magnifying-glass"></i>
             <span>Tìm Kiếm</span>
@@ -154,7 +154,7 @@
             <span class="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold border border-white/30 uppercase tracking-wider inline-flex items-center gap-1.5">
               <i class="fa-solid fa-shield-check text-emerald-300"></i> Bảo Vệ Người Mua &bull; Hoàn Tiền An Tâm
             </span>
-            <h1 class="text-3xl font-black leading-tight">SHOPEE MALL SIÊU SALE<br><span class="text-amber-200">HOÀN TIỀN 100% TRONG 15 NGÀY</span></h1>
+            <h1 class="text-3xl font-black leading-tight">ECO MALL SIÊU SALE<br><span class="text-amber-200">HOÀN TIỀN 100% TRONG 15 NGÀY</span></h1>
             <p class="text-xs text-white/90 max-w-lg">Bảo mật giao dịch đa tầng: Tách quyền tạo và duyệt (SoD), mã hóa số thẻ theo chuẩn PCI-DSS, ngăn chặn replay OTP và session hijacking.</p>
           </div>
           <div class="relative z-10 flex items-center gap-3 mt-4">
@@ -525,7 +525,7 @@
       <div class="shopee-header-bg text-white px-5 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-rotate-left text-lg"></i>
-          <h3 class="font-bold text-sm">Yêu Cầu Trả Hàng / Hoàn Tiền Shopee</h3>
+          <h3 class="font-bold text-sm">Yêu Cầu Trả Hàng / Hoàn Tiền ECO</h3>
         </div>
         <button onclick="closeRefundModal()" class="text-white/80 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
@@ -563,7 +563,7 @@
           <label class="block font-bold text-slate-700 mb-1">Lý Do Yêu Cầu Hoàn Tiền</label>
           <select id="modalReason" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-slate-800 focus:border-shopee-500 focus:outline-none">
             <option value="Hàng bị móp méo, vỡ hỏng trong quá trình vận chuyển">Hàng bị móp méo, vỡ hỏng trong quá trình vận chuyển</option>
-            <option value="Sản phẩm không đúng với mô tả trên Shopee Mall">Sản phẩm không đúng với mô tả trên Shopee Mall</option>
+            <option value="Sản phẩm không đúng với mô tả trên ECO Mall">Sản phẩm không đúng với mô tả trên ECO Mall</option>
             <option value="Hàng có lỗi kỹ thuật từ nhà sản xuất">Hàng có lỗi kỹ thuật từ nhà sản xuất</option>
             <option value="Giao thiếu phụ kiện kèm theo đơn">Giao thiếu phụ kiện kèm theo đơn</option>
           </select>
@@ -615,7 +615,7 @@
     let currentUser = null;
     let customerOrders = [
       {
-        orderId: 'ORD-SHOPEE-9901',
+        orderId: 'ORD-ECO-9901',
         title: 'iPhone 15 Pro Max 256GB Titan Tự Nhiên',
         amount: 29990000,
         date: '04/11/2026',
@@ -624,7 +624,7 @@
         color: 'bg-blue-100 text-blue-600'
       },
       {
-        orderId: 'ORD-SHOPEE-9902',
+        orderId: 'ORD-ECO-9902',
         title: 'Tai Nghe Chống Ồn Sony WH-1000XM5 Hi-Res',
         amount: 6990000,
         date: '03/11/2026',
@@ -765,7 +765,7 @@
 
     // Instant Purchase Action
     function buyProductInstant(title, price) {
-      const randId = 'ORD-SHOPEE-' + Math.floor(1000 + Math.random() * 9000);
+      const randId = 'ORD-ECO-' + Math.floor(1000 + Math.random() * 9000);
       const newOrder = {
         orderId: randId,
         title: title,
@@ -985,7 +985,7 @@
 
     // Reject Refund
     async function rejectRefund(refundId) {
-      const reason = prompt('Nhập lý do từ chối hoàn tiền:', 'Không thỏa điều kiện trả hàng Shopee Mall');
+      const reason = prompt('Nhập lý do từ chối hoàn tiền:', 'Không thỏa điều kiện trả hàng ECO Mall');
       if (!reason) return;
 
       try {
