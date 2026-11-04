@@ -6,7 +6,7 @@
   "step1_create_by_cskh": {
     "status_code": 201,
     "body": {
-      "id": "17785ab6-577d-4a40-a63d-e1e12f3eb242",
+      "id": "3f6f7f11-3226-457e-8a8a-aead590aeddb",
       "order_id": "ORD-SOD-2026",
       "customer_name": "Tran Thi B",
       "amount": 1250000.0,
@@ -15,19 +15,19 @@
       "status": "PENDING",
       "created_by_id": 1,
       "approved_by_id": null,
-      "created_at": "2026-11-04T13:50:46.184144",
-      "updated_at": "2026-11-04T13:50:46.184147"
+      "created_at": "2026-11-04T14:04:39.828495",
+      "updated_at": "2026-11-04T14:04:39.828498"
     },
     "audit": {
-      "timestamp": "2026-11-04T13:50:46.186051Z",
+      "timestamp": "2026-11-04T14:04:39.830831Z",
       "actor_id": 1,
       "role": "CSKH",
       "action": "REFUND_CREATE",
-      "object_id": "17785ab6-577d-4a40-a63d-e1e12f3eb242",
+      "object_id": "3f6f7f11-3226-457e-8a8a-aead590aeddb",
       "result": "SUCCESS",
       "source_ip": "127.0.0.1",
-      "correlation_id": "test-t6-1793800246-create",
-      "session_id_hash": "127e627616443a0e9b21025cdab90e2d6ed79bc9d744bbc9471f15cd555251df",
+      "correlation_id": "test-t6-1793801079-create",
+      "session_id_hash": "cfbf09abdbc74f473570a097bf061fe1161451499f63bec71debadaa0315b62b",
       "details": {
         "order_id": "ORD-SOD-2026",
         "amount": 1250000.0,
@@ -40,21 +40,21 @@
   "step2_approve_by_ketoan": {
     "status_code": 200,
     "body": {
-      "id": "17785ab6-577d-4a40-a63d-e1e12f3eb242",
+      "id": "3f6f7f11-3226-457e-8a8a-aead590aeddb",
       "status": "APPROVED",
       "approved_by_id": 2,
       "message": "Refund approved successfully"
     },
     "audit": {
-      "timestamp": "2026-11-04T13:50:46.240906Z",
+      "timestamp": "2026-11-04T14:04:39.893973Z",
       "actor_id": 2,
       "role": "KETOAN",
       "action": "REFUND_APPROVE",
-      "object_id": "17785ab6-577d-4a40-a63d-e1e12f3eb242",
+      "object_id": "3f6f7f11-3226-457e-8a8a-aead590aeddb",
       "result": "SUCCESS",
       "source_ip": "127.0.0.1",
-      "correlation_id": "test-t6-1793800246-approve",
-      "session_id_hash": "b361cc9a68eb3411a0254e5ae45c01594934c6661bfc2552466bc0f9bfa14730",
+      "correlation_id": "test-t6-1793801079-approve",
+      "session_id_hash": "d47cb216c31b1b45d6be5c46563b0c6118d788d3eea7acd4c543ab8bc0fb67d9",
       "details": {
         "order_id": "ORD-SOD-2026",
         "amount": 1250000.0,

@@ -7,7 +7,7 @@
     "username": "cskh_user",
     "status": 200
   },
-  "otp_used": "565541",
+  "otp_used": "547043",
   "response_mfa": {
     "status_code": 200,
     "body": {
@@ -17,24 +17,24 @@
       "role": "CSKH"
     },
     "cookies_received": {
-      "session_id": "E1LfauSzaWtra0cdpvMoT5Mes3iBv0Jou8HpxTYPY1c"
+      "session_id": "yFQy2YUFxoY13-_pZSJdoAZFqmMZ_VMsJ4G9sAUczMQ"
     }
   },
   "audit_record": {
-    "timestamp": "2026-11-04T13:50:45.999755Z",
+    "timestamp": "2026-11-04T14:04:39.568887Z",
     "actor_id": 1,
     "role": "CSKH",
     "action": "MFA_SUCCESS",
     "object_id": "1",
     "result": "SUCCESS",
     "source_ip": "127.0.0.1",
-    "correlation_id": "test-t1-1793800245",
-    "session_id_hash": "8ea7203513de6c254936f569c45b6cfbb76f243bac6a8e0e52b49cd10a91ce74",
+    "correlation_id": "test-t1-1793801079",
+    "session_id_hash": "b96b14ad02d627e26713fc4d4fd734ddee68839d3e030d06295caa73a1560d04",
     "details": {
       "mfa_state": "verified",
       "session_rotated": true,
-      "old_session_hash": "c9bbf78e4d746b53687ada6f449c9174fa41ccc3d927becf7311ef80ddf4be81",
-      "new_session_hash": "8ea7203513de6c254936f569c45b6cfbb76f243bac6a8e0e52b49cd10a91ce74"
+      "old_session_hash": "b6f3fe2508cfb9e716697ec299355dd20783fc8c5f6c709d7e569e0ff848074e",
+      "new_session_hash": "b96b14ad02d627e26713fc4d4fd734ddee68839d3e030d06295caa73a1560d04"
     }
   }
 }
