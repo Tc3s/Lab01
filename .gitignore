@@ -13,3 +13,4 @@ venv/
 .agents/
 Screenshot*.png
 
+TEST_INFRA.md
