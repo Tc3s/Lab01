@@ -1,5 +1,5 @@
 """
-FastAPI Dependencies for Session Auth, RBAC, and Audit Context
+FastAPI Dependencies for Session Auth, RBAC, Database, and Audit Context
 Location: app/api/deps.py
 
 Provides:
@@ -7,15 +7,17 @@ Provides:
 - require_role: RBAC guard factory returning 403 on unauthorized role and logging DENIED audit event
 - get_correlation_id: Extracts correlation_id from request.state
 - get_source_ip: Extracts client IP
+- get_db: Re-exported canonical database session dependency
 """
 
 from typing import Any, Callable, Dict, List, Optional
-
 from fastapi import Cookie, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session as DBSession
 
 from app.core.audit import log_audit
 from app.core.config import settings
 from app.core.redis import get_session, touch_session
+from app.db.database import get_db  # Re-exported canonical DB dependency
 
 
 def get_correlation_id(request: Request) -> str:

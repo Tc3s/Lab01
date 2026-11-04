@@ -3,8 +3,8 @@
   "name": "Session Fixation Defense",
   "status": "PASS",
   "condition": "SID_before != SID_after; SID c\u0169 b\u1ecb h\u1ee7y nh\u1eadn 401; SID m\u1edbi nh\u1eadn 200",
-  "sid_before_mfa": "Ml6f50hJp-A2JziNykxCQ-JCFeS76fb8l-qb_CsH7ug",
-  "sid_after_mfa": "PWDuDAmtXyo_zcagAGpQsh58RZDXNDPM5Y07FB-ugBU",
+  "sid_before_mfa": "b9PmqaEb-7WmpmvJ9nEGR3g1Rg45dJHu-ZXu2vUJI_k",
+  "sid_after_mfa": "2swb2BmtXJ_aWMsROoh8tTSLNqS32jhE47NhCLx3Un4",
   "rotation_verified": true,
   "request_with_old_sid": {
     "status_code": 401,

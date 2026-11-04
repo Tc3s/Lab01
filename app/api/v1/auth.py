@@ -3,20 +3,25 @@ Authentication & Session Management API Routes
 Location: app/api/v1/auth.py
 
 Endpoints:
-- POST /auth/login        - Password authentication, issues pre-MFA session
-- POST /auth/mfa/verify   - TOTP verification, rotates session, issues post-MFA cookie
-- POST /auth/logout        - Destroys current session
-- POST /auth/revoke-all    - Revokes ALL user sessions (bonus)
+- POST /auth/login           - Password authentication, issues pre-MFA session
+- POST /auth/mfa/verify      - TOTP verification, anti-replay lock, rotates session, issues post-MFA cookie
+- POST /auth/logout          - Destroys current session and clears cookie
+- POST /auth/revoke-all      - Revokes ALL sessions for user across all devices
 - POST /auth/change-password - Changes password, revokes all sessions
-- GET  /auth/me            - Returns current authenticated user profile
+- GET  /auth/me              - Returns current authenticated user profile
 """
 
-import re
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session as DBSession
 
+from app.api.deps import (
+    get_correlation_id,
+    get_current_session,
+    get_db,
+    get_source_ip,
+)
 from app.core.audit import log_audit
 from app.core.config import settings
 from app.core.redis import (
@@ -34,8 +39,6 @@ from app.core.security import (
     verify_password,
     verify_totp,
 )
-from app.api.deps import get_correlation_id, get_current_session, get_source_ip
-from app.db.database import get_db
 from app.db.models import User
 from app.schemas.auth import (
     AuthMeResponse,
@@ -65,7 +68,7 @@ def _set_session_cookie(response: Response, session_id: str) -> None:
 
 
 def _clear_session_cookie(response: Response) -> None:
-    """Delete session cookie."""
+    """Explicitly delete session cookie with Max-Age=0."""
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,
         httponly=settings.COOKIE_HTTPONLY,
@@ -88,6 +91,7 @@ async def login(
     """
     Step 1 of 2-factor auth: validate username + password.
     Issues a temporary pre-MFA session (5 min TTL, mfa_verified=False).
+    Uses dummy hash evaluation on missing user to prevent timing enumeration.
     """
     user = db.query(User).filter(User.username == body.username).first()
 
@@ -163,9 +167,9 @@ async def mfa_verify(
     """
     Step 2 of 2-factor auth: verify TOTP code.
     On success:
-    1. Checks anti-replay via Redis SET NX
+    1. Checks anti-replay via Redis atomic SET NX with 90s TTL
     2. Destroys pre-MFA session (session fixation defense)
-    3. Creates new post-MFA session with mfa_verified=True
+    3. Creates new post-MFA session with mfa_verified=True (15m idle / 8h absolute timeout)
     4. Sets new session cookie (session rotation)
     """
     if not session_id:
@@ -195,7 +199,7 @@ async def mfa_verify(
             detail={"error": "USER_NOT_FOUND", "message": "User not found"}
         )
 
-    # Verify TOTP
+    # Verify TOTP with ±1 step clock drift
     is_valid, matched_step = verify_totp(user.totp_secret, body.otp_code)
 
     if not is_valid or matched_step is None:
@@ -212,7 +216,7 @@ async def mfa_verify(
         )
 
     # Anti-replay: atomic SET NX on time_step
-    is_fresh = await check_and_set_otp_replay(user.id, matched_step)
+    is_fresh = await check_and_set_otp_replay(user.id, matched_step, ttl=settings.OTP_REPLAY_TTL_SECONDS)
     if not is_fresh:
         log_audit(
             actor_id=user.id, role=user.role, action="MFA_REPLAY_DETECTED",
@@ -274,7 +278,7 @@ async def logout(
     correlation_id: str = Depends(get_correlation_id),
     source_ip: str = Depends(get_source_ip),
 ):
-    """Destroy current session and clear cookie."""
+    """Destroy current session in Redis and clear cookie."""
     session_id = session.get("_session_id")
     user_id = session.get("user_id")
 
@@ -300,7 +304,7 @@ async def revoke_all_sessions(
     correlation_id: str = Depends(get_correlation_id),
     source_ip: str = Depends(get_source_ip),
 ):
-    """Revoke ALL sessions for the current user (bonus requirement)."""
+    """Revoke ALL sessions for the current user across all devices."""
     user_id = session.get("user_id")
     session_id = session.get("_session_id")
 
@@ -331,7 +335,7 @@ async def change_password(
     correlation_id: str = Depends(get_correlation_id),
     source_ip: str = Depends(get_source_ip),
 ):
-    """Change password and revoke all sessions (forces re-auth)."""
+    """Change password and revoke all sessions (forcing re-auth across all devices)."""
     user_id = session.get("user_id")
     session_id = session.get("_session_id")
 
@@ -386,4 +390,3 @@ async def get_me(
         role=session["role"],
         mfa_state="verified" if session.get("mfa_verified") else "pending",
     )
-
